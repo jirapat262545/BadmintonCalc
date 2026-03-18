@@ -2,7 +2,6 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <!-- iOS: viewport-fit=cover for notch support, prevent auto-zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -18,163 +17,115 @@
   <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ── RESET & BASE ── */
     *, *::before, *::after { box-sizing: border-box; -webkit-box-sizing: border-box; }
-
-    html {
-      /* iOS: prevent elastic overscroll on body */
-      height: 100%;
-      -webkit-text-size-adjust: 100%;
-    }
-
+    html { height: 100%; -webkit-text-size-adjust: 100%; }
     body {
       background: #0a1a0f;
       font-family: 'Plus Jakarta Sans', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       min-height: 100%;
-      /* iOS: prevent double-tap zoom globally */
       touch-action: manipulation;
-      /* iOS: remove callout on long press */
       -webkit-touch-callout: none;
       overscroll-behavior: none;
     }
-
-    /* iOS safe area padding */
     .safe-top    { padding-top: env(safe-area-inset-top); }
     .safe-bottom { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 
-    /* ── SCROLLBAR (desktop) ── */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #0a1a0f; }
     ::-webkit-scrollbar-thumb { background: #1f5229; border-radius: 3px; }
 
-    /* ── INPUTS ──
-       CRITICAL for iOS: font-size must be >= 16px to prevent auto-zoom
-    ── */
     .inp {
-      width: 100%;
-      background: #0f2a17;
-      border: 1px solid #173d21;
-      border-radius: 10px;
-      padding: 11px 13px;
-      color: white;
-      /* iOS anti-zoom: MUST be 16px+ */
-      font-size: 16px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      outline: none;
-      /* iOS: remove default appearance */
-      -webkit-appearance: none;
-      appearance: none;
+      width: 100%; background: #0f2a17; border: 1px solid #173d21;
+      border-radius: 10px; padding: 11px 13px; color: white;
+      font-size: 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none; -webkit-appearance: none; appearance: none;
       transition: border-color .2s, box-shadow .2s;
-      /* iOS: prevent tap highlight */
       -webkit-tap-highlight-color: transparent;
     }
     .inp::placeholder { color: #1a3d22; }
-    .inp:focus {
-      border-color: #a3e635;
-      box-shadow: 0 0 0 3px rgba(163,230,53,.18);
-    }
-    /* iOS: hide number spinners cleanly */
+    .inp:focus { border-color: #a3e635; box-shadow: 0 0 0 3px rgba(163,230,53,.18); }
     input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
-
-    /* iOS: time input icon */
     input[type=time]::-webkit-calendar-picker-indicator {
-      filter: invert(.6) sepia(1) hue-rotate(80deg);
-      cursor: pointer;
-      padding: 4px;
+      filter: invert(.6) sepia(1) hue-rotate(80deg); cursor: pointer; padding: 4px;
     }
-    /* iOS: time input needs explicit height */
     input[type=time] { min-height: 44px; }
 
-    /* ── LABELS ── */
-    .lbl {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      color: #4ade80;
-      text-transform: uppercase;
-      letter-spacing: .09em;
-      margin-bottom: 5px;
-    }
+    .lbl { display: block; font-size: 11px; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 5px; }
+    .card { background: #0f2a17; border: 1px solid #173d21; border-radius: 14px; padding: 18px; }
 
-    /* ── CARDS ── */
-    .card {
-      background: #0f2a17;
-      border: 1px solid #173d21;
-      border-radius: 14px;
-      padding: 18px;
-    }
-
-    /* ── BUTTONS ──
-       iOS: min 44px height, touch-action, no tap highlight
-    ── */
     .btn-lime, .btn-ghost, .btn-red, .btn-toggle {
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      cursor: pointer;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      -webkit-appearance: none;
-      border: none;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-appearance: none; border: none;
     }
-
     .btn-lime {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       background: #a3e635; color: #050e07; font-weight: 700; font-size: 14px;
-      min-height: 44px; padding: 0 18px; border-radius: 10px;
+      min-height: 44px; padding: 0 18px; border-radius: 10px; white-space: nowrap;
       transition: background .15s, transform .1s;
-      white-space: nowrap;
     }
     .btn-lime:active { background: #bef264; transform: scale(.96); }
-
     .btn-ghost {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       background: #0f2a17; color: #86efac; font-weight: 600; font-size: 13px;
       min-height: 44px; padding: 0 14px; border-radius: 10px;
-      border: 1px solid #173d21 !important;
+      border: 1px solid #173d21 !important; white-space: nowrap;
       transition: border-color .15s, color .15s;
-      white-space: nowrap;
     }
     .btn-ghost:active { border-color: #a3e635 !important; color: #a3e635; }
     .btn-ghost:disabled { opacity: .5; }
-
     .btn-red {
       display: inline-flex; align-items: center; justify-content: center; gap: 4px;
       background: rgba(220,38,38,.1); border: 1px solid rgba(220,38,38,.3) !important;
-      color: #f87171; border-radius: 8px;
-      min-height: 36px; padding: 0 12px;
-      font-size: 13px; font-weight: 700;
-      transition: background .15s;
+      color: #f87171; border-radius: 8px; min-height: 36px; padding: 0 12px;
+      font-size: 13px; font-weight: 700; transition: background .15s;
     }
     .btn-red:active { background: rgba(220,38,38,.22); }
-
     .btn-toggle {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       min-height: 44px; padding: 0 14px; border-radius: 10px;
-      font-weight: 700; font-size: 13px;
-      transition: all .15s;
-      white-space: nowrap;
+      font-weight: 700; font-size: 13px; transition: all .15s; white-space: nowrap;
     }
 
-    /* ── BATCH TAG ── */
     .batch-tag {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 11px; font-weight: 700; padding: 3px 9px;
       border-radius: 99px; border: 1px solid; white-space: nowrap;
     }
 
-    /* ── RESULT TABLE ── */
-    .rtable { width: 100%; border-collapse: collapse; }
-    .rtable th {
-      background: #173d21; color: #4ade80;
-      font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
-      padding: 10px 10px; text-align: right; font-weight: 700;
+    /* Save indicator */
+    .save-dot {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; color: #4ade80; font-weight: 600;
+      padding: 4px 10px; border-radius: 99px;
+      background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2);
+      transition: opacity .3s;
     }
+    .save-dot.saving { color: #fbbf24; border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.08); }
+    .save-dot .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+    /* Toast notification */
+    .toast {
+      position: fixed; bottom: max(24px, env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
+      background: #173d21; border: 1px solid rgba(163,230,53,.4);
+      color: #a3e635; font-size: 14px; font-weight: 600;
+      padding: 12px 22px; border-radius: 99px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.5);
+      z-index: 1000; white-space: nowrap;
+      animation: toastIn .25s ease-out;
+    }
+    @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+    .rtable { width: 100%; border-collapse: collapse; }
+    .rtable th { background: #173d21; color: #4ade80; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding: 10px 10px; text-align: right; font-weight: 700; }
     .rtable th:first-child { text-align: left; }
     .rtable td { padding: 10px 10px; text-align: right; color: #bbf7d0; border-top: 1px solid #173d21; font-size: 13px; }
     .rtable td:first-child { text-align: left; color: white; font-weight: 700; }
@@ -182,69 +133,47 @@
     .rtable tfoot td { background: #173d21; font-weight: 700; color: white; border-top: 2px solid rgba(163,230,53,.3); font-size: 13px; }
     .lime-col { color: #a3e635 !important; font-weight: 800 !important; }
 
-    /* ── BATCH PALETTE ── */
     .bc0 { background: rgba(163,230,53,.08); border-color: rgba(163,230,53,.4); color: #a3e635; }
     .bc1 { background: rgba(56,189,248,.08); border-color: rgba(56,189,248,.4); color: #7dd3fc; }
     .bc2 { background: rgba(251,146,60,.08); border-color: rgba(251,146,60,.4); color: #fdba74; }
     .bc3 { background: rgba(216,180,254,.08); border-color: rgba(216,180,254,.4); color: #d8b4fe; }
     .bc4 { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.4); color: #fcd34d; }
 
-    /* ── ANIMATIONS ── */
     @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
     .slide-in { animation: slideIn .2s ease-out; }
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     .fade-in { animation: fadeIn .3s ease-out; }
+    .export-snapshot { background: #0a1a0f !important; }
+    .export-snapshot * { -webkit-font-smoothing: antialiased !important; }
 
-    /* ── EXPORT SNAPSHOT AREA ──
-       Use system-safe fonts + high contrast for clean image output
-    ── */
-    .export-snapshot {
-      background: #0a1a0f !important;
-    }
-    .export-snapshot * {
-      /* Force subpixel rendering off — better for canvas capture */
-      -webkit-font-smoothing: antialiased !important;
-    }
-
-    /* ── LAYOUT GRIDS ── */
     .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .gp { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     .gb { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-    /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
       .g3 { grid-template-columns: 1fr 1fr; }
       .g3 .span2 { grid-column: span 2; }
-      .g2 { grid-template-columns: 1fr 1fr; }
       .gp { grid-template-columns: 1fr 1fr; }
       .gp .pn { grid-column: span 2; }
       .gb { grid-template-columns: 1fr 1fr; }
       .gb .span2 { grid-column: span 2; }
       .card { padding: 14px; }
-      /* smaller table on mobile */
       .rtable th { font-size: 9px; padding: 8px 7px; }
       .rtable td { font-size: 12px; padding: 8px 7px; }
-      /* action buttons wrap nicely */
       .action-bar { flex-wrap: wrap; }
     }
 
-    /* iOS: prevent momentum scroll on overflow containers */
     .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-    /* Loading overlay */
     .overlay {
       position: fixed; inset: 0; z-index: 999;
       background: rgba(5,14,7,.88);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 16px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
     }
     .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid #1f5229;
-      border-top-color: #a3e635;
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
+      width: 40px; height: 40px; border: 3px solid #1f5229; border-top-color: #a3e635;
+      border-radius: 50%; animation: spin .7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
@@ -254,6 +183,30 @@
 
 <script type="text/babel">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ═══════════════════════════════════════════
+   STORAGE KEY & HELPERS
+═══════════════════════════════════════════ */
+const STORAGE_KEY = 'badminton_split_v2';
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveToStorage(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /* ═══════════════════════════════════════════
    UTILS
@@ -271,25 +224,18 @@ const fmt = (n, round) =>
 
 const BCLS = ['bc0','bc1','bc2','bc3','bc4'];
 const BICO = ['🟢','🔵','🟠','🟣','🟡'];
-const BBDR = [
-  'rgba(163,230,53,.35)','rgba(56,189,248,.35)',
-  'rgba(251,146,60,.35)','rgba(216,180,254,.35)','rgba(251,191,36,.35)',
-];
-const BBBG = [
-  'rgba(163,230,53,.05)','rgba(56,189,248,.05)',
-  'rgba(251,146,60,.05)','rgba(216,180,254,.05)','rgba(251,191,36,.05)',
-];
+const BBDR = ['rgba(163,230,53,.35)','rgba(56,189,248,.35)','rgba(251,146,60,.35)','rgba(216,180,254,.35)','rgba(251,191,36,.35)'];
+const BBBG = ['rgba(163,230,53,.05)','rgba(56,189,248,.05)','rgba(251,146,60,.05)','rgba(216,180,254,.05)','rgba(251,191,36,.05)'];
 const bCls = i => BCLS[i % 5];
 const bIco = i => BICO[i % 5];
 
 /* ═══════════════════════════════════════════
-   SHUTTLE ENGINE
+   CALCULATION ENGINE
 ═══════════════════════════════════════════ */
 function buildShuttleList(batches) {
   const list = []; let num = 1;
   batches.forEach((b, bi) => {
-    const cnt = Math.max(0, Number(b.count) || 0);
-    for (let i = 0; i < cnt; i++)
+    for (let i = 0; i < Math.max(0, Number(b.count) || 0); i++)
       list.push({ shuttleNo: num++, batchIdx: bi, price: Number(b.price) || 0 });
   });
   return list;
@@ -306,9 +252,9 @@ function calculate(settings, players, batches) {
   for (let t = sMin; t < eMin; t += 60)
     slots.push({ start: t, end: Math.min(t + 60, eMin) });
 
-  const courtCosts  = Object.fromEntries(players.map(p => [p.id, 0]));
-  const shutCosts   = Object.fromEntries(players.map(p => [p.id, 0]));
-  const batchCosts  = Object.fromEntries(players.map(p => [p.id, batches.map(() => 0)]));
+  const courtCosts = Object.fromEntries(players.map(p => [p.id, 0]));
+  const shutCosts  = Object.fromEntries(players.map(p => [p.id, 0]));
+  const batchCosts = Object.fromEntries(players.map(p => [p.id, batches.map(() => 0)]));
 
   slots.forEach(sl => {
     const f = (sl.end - sl.start) / 60;
@@ -319,9 +265,7 @@ function calculate(settings, players, batches) {
   });
 
   shuttles.forEach(({ shuttleNo, batchIdx, price }) => {
-    const using = players.filter(p =>
-      Number(p.shuttleStart) <= shuttleNo && Number(p.shuttleEnd) >= shuttleNo
-    );
+    const using = players.filter(p => Number(p.shuttleStart) <= shuttleNo && Number(p.shuttleEnd) >= shuttleNo);
     if (!using.length) return;
     const cpp = price / using.length;
     using.forEach(p => { shutCosts[p.id] += cpp; batchCosts[p.id][batchIdx] += cpp; });
@@ -331,9 +275,9 @@ function calculate(settings, players, batches) {
     id: p.id, name: p.name,
     startTime: p.startTime, endTime: p.endTime,
     shuttleStart: p.shuttleStart, shuttleEnd: p.shuttleEnd,
-    courtCost: courtCosts[p.id] || 0,
-    shuttleCost: shutCosts[p.id] || 0,
-    batchCosts: batchCosts[p.id],
+    courtCost:   courtCosts[p.id] || 0,
+    shuttleCost: shutCosts[p.id]  || 0,
+    batchCosts:  batchCosts[p.id],
     total: (courtCosts[p.id] || 0) + (shutCosts[p.id] || 0),
   }));
 
@@ -345,8 +289,8 @@ function calculate(settings, players, batches) {
 function validate(settings, players, batches) {
   const errs = [];
   const sMin = t2m(settings.sessionStart), eMin = t2m(settings.sessionEnd);
-  if (eMin <= sMin)                             errs.push('⚠️ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น');
-  if (Number(settings.courtPricePerHour) <= 0)  errs.push('⚠️ ค่าสนามต้องมากกว่า 0');
+  if (eMin <= sMin) errs.push('⚠️ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น');
+  if (Number(settings.courtPricePerHour) <= 0) errs.push('⚠️ ค่าสนามต้องมากกว่า 0');
   const totalS = buildShuttleList(batches).length;
   if (!totalS) errs.push('⚠️ ต้องมีลูกแบดอย่างน้อย 1 ลูก');
   batches.forEach((b, i) => {
@@ -356,14 +300,21 @@ function validate(settings, players, batches) {
   players.forEach((p, i) => {
     const lbl = p.name || `ผู้เล่นคนที่ ${i+1}`;
     const ps = t2m(p.startTime), pe = t2m(p.endTime);
-    if (!p.name.trim())   errs.push(`⚠️ [${lbl}] กรุณากรอกชื่อ`);
-    if (pe <= ps)         errs.push(`⚠️ [${lbl}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`);
+    if (!p.name.trim()) errs.push(`⚠️ [${lbl}] กรุณากรอกชื่อ`);
+    if (pe <= ps)       errs.push(`⚠️ [${lbl}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`);
     if (ps < sMin || pe > eMin) errs.push(`⚠️ [${lbl}] เวลาต้องอยู่ในช่วง ${settings.sessionStart}–${settings.sessionEnd}`);
     if (Number(p.shuttleStart) > Number(p.shuttleEnd)) errs.push(`⚠️ [${lbl}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`);
     if (Number(p.shuttleEnd) > totalS) errs.push(`⚠️ [${lbl}] ลูกสุดท้าย (${p.shuttleEnd}) เกินจำนวนลูกทั้งหมด (${totalS})`);
   });
   return errs;
 }
+
+/* ═══════════════════════════════════════════
+   DEFAULT / EXAMPLE DATA
+═══════════════════════════════════════════ */
+const DEFAULT_SETTINGS = { courtPricePerHour: 140, sessionStart: '18:00', sessionEnd: '21:00' };
+const DEFAULT_BATCHES  = [{ id: uid(), count: 7, price: 80, label: '' }];
+const DEFAULT_PLAYERS  = [{ id: uid(), name: '', startTime: '18:00', endTime: '', shuttleStart: 1, shuttleEnd: 1 }];
 
 const makeExample = () => ({
   settings: { courtPricePerHour: 140, sessionStart: '18:00', sessionEnd: '21:00' },
@@ -382,65 +333,35 @@ const makeExample = () => ({
     {id:uid(),name:'ปิ่น', startTime:'19:00',endTime:'21:00',shuttleStart:3,shuttleEnd:7},
   ],
 });
+
 const makeBatch  = () => ({ id: uid(), count: 1, price: 80, label: '' });
 const makePlayer = (s = '18:00') => ({ id: uid(), name: '', startTime: s, endTime: '', shuttleStart: 1, shuttleEnd: 1 });
 
 /* ═══════════════════════════════════════════
-   EXPORT — Sharp Image
-   Key fixes:
-   1. scale = devicePixelRatio * 2  (min 4 for Retina)
-   2. Wait for fonts via document.fonts.ready
-   3. letterRendering: true
-   4. Inline font fallback in clone
+   SHARP EXPORT
 ═══════════════════════════════════════════ */
 async function exportSharpImage(element) {
-  // Wait for all fonts to finish loading
   await document.fonts.ready;
-
   const dpr = window.devicePixelRatio || 1;
-  // Use at least 3× scale; on Retina (dpr=2) → 4×
   const scale = Math.max(3, dpr * 2);
-
-  const canvas = await html2canvas(element, {
-    backgroundColor: '#0a1a0f',
-    scale,
-    useCORS: true,
-    allowTaint: false,
-    logging: false,
-    letterRendering: true,   // crucial for sharp Thai text
-    imageTimeout: 0,
-    // onclone: inject a <style> into the cloned doc to lock fonts
-    onclone: (clonedDoc) => {
-      // Ensure font-smoothing is applied
-      const style = clonedDoc.createElement('style');
-      style.innerHTML = `
-        * {
-          -webkit-font-smoothing: antialiased !important;
-          font-smoothing: antialiased !important;
-          text-rendering: optimizeLegibility !important;
-        }
-        body { background: #0a1a0f; }
-        /* Lock all font sizes so they don't shift */
-        .rtable th { font-size: 10px !important; }
-        .rtable td { font-size: 13px !important; }
-      `;
-      clonedDoc.head.appendChild(style);
-
-      // Re-inject the Google Font link so the cloned doc can access it
-      const link = clonedDoc.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap';
-      clonedDoc.head.appendChild(link);
+  return html2canvas(element, {
+    backgroundColor: '#0a1a0f', scale, useCORS: true,
+    allowTaint: false, logging: false, letterRendering: true, imageTimeout: 0,
+    onclone: (doc) => {
+      const s = doc.createElement('style');
+      s.innerHTML = `* { -webkit-font-smoothing:antialiased!important; text-rendering:optimizeLegibility!important; } body{background:#0a1a0f;}`;
+      doc.head.appendChild(s);
+      const l = doc.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap';
+      doc.head.appendChild(l);
     },
   });
-
-  return canvas;
 }
 
 /* ═══════════════════════════════════════════
-   SUB-COMPONENTS
+   COMPONENTS
 ═══════════════════════════════════════════ */
-
 function ShuttleMap({ batches }) {
   const shuttles = buildShuttleList(batches);
   if (!shuttles.length) return null;
@@ -449,9 +370,7 @@ function ShuttleMap({ batches }) {
       <p className="lbl" style={{ marginBottom: 7 }}>แผนผังลำดับลูก</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
         {shuttles.map(({ shuttleNo, batchIdx }) => (
-          <span key={shuttleNo} className={`batch-tag ${bCls(batchIdx)}`}>
-            {shuttleNo}
-          </span>
+          <span key={shuttleNo} className={`batch-tag ${bCls(batchIdx)}`}>{shuttleNo}</span>
         ))}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -472,7 +391,7 @@ function ShuttleMap({ batches }) {
 
 function BatchRow({ batch, index, startNum, endNum, onChange, onRemove, canRemove }) {
   return (
-    <div className="slide-in" style={{ marginBottom: 10, padding: '14px', borderRadius: 12, border: `1px solid ${BBDR[index % 5]}`, background: BBBG[index % 5] }}>
+    <div className="slide-in" style={{ marginBottom: 10, padding: 14, borderRadius: 12, border: `1px solid ${BBDR[index%5]}`, background: BBBG[index%5] }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 18 }}>{bIco(index)}</span>
@@ -566,10 +485,8 @@ function ResultsTable({ data, round, settings, batches }) {
   const { results, totalCourt, totalShuttle, grandTotal } = data;
   const multiBatch = batches.length > 1;
   const shuttles = buildShuttleList(batches);
-
   return (
     <div className="fade-in">
-      {/* Summary cards */}
       <div className="g3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
         {[
           { lbl: 'ค่าสนามรวม', v: totalCourt,   accent: false },
@@ -583,8 +500,6 @@ function ResultsTable({ data, round, settings, batches }) {
           </div>
         ))}
       </div>
-
-      {/* Batch breakdown */}
       {multiBatch && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
           {batches.map((b, i) => {
@@ -593,44 +508,24 @@ function ResultsTable({ data, round, settings, batches }) {
             const bTotal = results.reduce((s, r) => s + (r.batchCosts[i] || 0), 0);
             return (
               <span key={b.id} className={`batch-tag ${bCls(i)}`} style={{ fontSize: 12, padding: '5px 11px' }}>
-                {bIco(i)} ชุด{i+1} (ลูก {mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo} · {b.price}฿)
-                {' '}→ รวม ฿{fmt(bTotal, round)}
+                {bIco(i)} ชุด{i+1} (ลูก {mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo} · {b.price}฿) → รวม ฿{fmt(bTotal, round)}
               </span>
             );
           })}
         </div>
       )}
-
-      {/* Info tags */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 14 }}>
-        {[
-          `🕐 ${settings.sessionStart}–${settings.sessionEnd}`,
-          `🏟️ ${settings.courtPricePerHour} บาท/ชม.`,
-          `🏸 ${data.totalShuttlesUsed} ลูก รวม ฿${fmt(totalShuttle, round)}`,
-        ].map(tag => (
-          <span key={tag} style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>
-            {tag}
-          </span>
+        {[`🕐 ${settings.sessionStart}–${settings.sessionEnd}`, `🏟️ ${settings.courtPricePerHour} บาท/ชม.`, `🏸 ${data.totalShuttlesUsed} ลูก รวม ฿${fmt(totalShuttle, round)}`].map(tag => (
+          <span key={tag} style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>{tag}</span>
         ))}
       </div>
-
-      {/* Table */}
       <div className="scroll-x" style={{ borderRadius: 12, border: '1px solid #173d21' }}>
         <table className="rtable">
           <thead>
             <tr>
               <th style={{ textAlign: 'left' }}>ชื่อ</th>
-              <th>เวลา</th>
-              <th>ลูก</th>
-              <th>ค่าสนาม</th>
-              {multiBatch
-                ? batches.map((b, i) => {
-                    const mine = shuttles.filter(s => s.batchIdx === i);
-                    if (!mine.length) return null;
-                    return <th key={b.id}>{bIco(i)}ชุด{i+1}<br /><span style={{ fontSize: 9 }}>{mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo}</span></th>;
-                  })
-                : <th>ค่าลูก</th>
-              }
+              <th>เวลา</th><th>ลูก</th><th>ค่าสนาม</th>
+              {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <th key={b.id}>{bIco(i)}ชุด{i+1}<br/><span style={{fontSize:9}}>{mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo}</span></th>; }) : <th>ค่าลูก</th>}
               <th style={{ color: '#a3e635' }}>รวม</th>
             </tr>
           </thead>
@@ -641,14 +536,7 @@ function ResultsTable({ data, round, settings, batches }) {
                 <td style={{ fontSize: 11, color: '#86efac' }}>{r.startTime}–{r.endTime}</td>
                 <td style={{ fontSize: 11, color: '#86efac' }}>{r.shuttleStart}–{r.shuttleEnd}</td>
                 <td>{fmt(r.courtCost, round)}</td>
-                {multiBatch
-                  ? batches.map((b, i) => {
-                      const mine = shuttles.filter(s => s.batchIdx === i);
-                      if (!mine.length) return null;
-                      return <td key={b.id}>{fmt(r.batchCosts[i] || 0, round)}</td>;
-                    })
-                  : <td>{fmt(r.shuttleCost, round)}</td>
-                }
+                {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(r.batchCosts[i]||0,round)}</td>; }) : <td>{fmt(r.shuttleCost,round)}</td>}
                 <td className="lime-col">฿{fmt(r.total, round)}</td>
               </tr>
             ))}
@@ -657,14 +545,7 @@ function ResultsTable({ data, round, settings, batches }) {
             <tr>
               <td colSpan={3} style={{ textAlign: 'left', color: '#4ade80', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em' }}>รวมทั้งหมด</td>
               <td>{fmt(totalCourt, round)}</td>
-              {multiBatch
-                ? batches.map((b, i) => {
-                    const mine = shuttles.filter(s => s.batchIdx === i);
-                    if (!mine.length) return null;
-                    return <td key={b.id}>{fmt(results.reduce((s, r) => s + (r.batchCosts[i]||0), 0), round)}</td>;
-                  })
-                : <td>{fmt(totalShuttle, round)}</td>
-              }
+              {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(results.reduce((s,r)=>s+(r.batchCosts[i]||0),0),round)}</td>; }) : <td>{fmt(totalShuttle,round)}</td>}
               <td className="lime-col" style={{ fontSize: 15 }}>฿{fmt(grandTotal, round)}</td>
             </tr>
           </tfoot>
@@ -678,22 +559,43 @@ function ResultsTable({ data, round, settings, batches }) {
    MAIN APP
 ═══════════════════════════════════════════ */
 function App() {
-  const [settings, setSettings] = useState({ courtPricePerHour: 140, sessionStart: '18:00', sessionEnd: '21:00' });
-  const [batches,  setBatches]  = useState([{ id: uid(), count: 7, price: 80, label: '' }]);
-  const [players,  setPlayers]  = useState([makePlayer('18:00')]);
-  const [round,    setRound]    = useState(false);
+  // ── Load saved state or use defaults ──
+  const saved = useMemo(() => loadFromStorage(), []);
+
+  const [settings, setSettings] = useState(saved?.settings || DEFAULT_SETTINGS);
+  const [batches,  setBatches]  = useState(saved?.batches  || DEFAULT_BATCHES);
+  const [players,  setPlayers]  = useState(saved?.players  || DEFAULT_PLAYERS);
+  const [round,    setRound]    = useState(saved?.round     || false);
   const [errors,   setErrors]   = useState([]);
   const [result,   setResult]   = useState(null);
-  const [loading,  setLoading]  = useState(false); // export loading overlay
-  const resultRef = useRef(null);
+  const [loading,  setLoading]  = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'saving'
+  const [toast,    setToast]    = useState(null);
+  const resultRef  = useRef(null);
+  const saveTimer  = useRef(null);
 
-  const totalShuttles = useMemo(() => buildShuttleList(batches).length, [batches]);
+  // ── Auto-save to localStorage (debounced 600ms) ──
+  useEffect(() => {
+    setSaveStatus('saving');
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveToStorage({ settings, batches, players, round });
+      setSaveStatus('saved');
+    }, 600);
+    return () => clearTimeout(saveTimer.current);
+  }, [settings, batches, players, round]);
 
+  // ── Auto-calculate ──
   useEffect(() => {
     const errs = validate(settings, players, batches);
     setErrors(errs);
     setResult(errs.length === 0 && players.length > 0 ? calculate(settings, players, batches) : null);
   }, [settings, players, batches]);
+
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   const updS = useCallback((k, v) => setSettings(p => ({ ...p, [k]: v })), []);
   const updB = useCallback((id, k, v) => setBatches(p => p.map(b => b.id===id ? { ...b, [k]: v } : b)), []);
@@ -701,54 +603,55 @@ function App() {
 
   const batchNums = useMemo(() => {
     let num = 1;
-    return batches.map(b => {
-      const s = num, cnt = Math.max(0, Number(b.count) || 0);
-      num += cnt;
-      return { start: s, end: s + cnt - 1 };
-    });
+    return batches.map(b => { const s=num, cnt=Math.max(0,Number(b.count)||0); num+=cnt; return { start:s, end:s+cnt-1 }; });
   }, [batches]);
+
+  const totalShuttles = useMemo(() => buildShuttleList(batches).length, [batches]);
 
   const loadExample = () => {
     const ex = makeExample();
     setSettings(ex.settings); setBatches(ex.batches); setPlayers(ex.players);
-  };
-  const clearAll = () => {
-    setSettings({ courtPricePerHour: 0, sessionStart: '18:00', sessionEnd: '21:00' });
-    setBatches([makeBatch()]); setPlayers([makePlayer()]);
+    showToast('โหลดข้อมูลตัวอย่างแล้ว ✅');
   };
 
-  /* ── EXPORT (sharp) ── */
+  // ── Clear ALL — shows confirm first ──
+  const clearAll = () => {
+    if (!window.confirm('ล้างข้อมูลทั้งหมด?\n(ข้อมูลที่บันทึกไว้จะถูกลบออกด้วย)')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    setSettings(DEFAULT_SETTINGS);
+    setBatches([makeBatch()]);
+    setPlayers([makePlayer()]);
+    showToast('ล้างข้อมูลแล้ว 🗑️');
+  };
+
   const handleExport = async () => {
     if (!resultRef.current) return;
     setLoading(true);
     try {
-      // Small delay so React renders the overlay before canvas blocks the thread
       await new Promise(r => setTimeout(r, 80));
       const canvas = await exportSharpImage(resultRef.current);
       const link = document.createElement('a');
-      link.download = `badminton-split-${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0); // quality=1 for lossless
+      link.download = `badminton-split-${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
+      showToast('Export สำเร็จ! 📸');
     } catch (e) { alert('Export ล้มเหลว: ' + e.message); }
     finally { setLoading(false); }
   };
 
-  /* ── COPY TEXT ── */
   const copyText = async () => {
     if (!result) return;
     const { results, totalCourt, totalShuttle, grandTotal } = result;
     const lines = [
       `🏸 Badminton Split — ${settings.sessionStart}–${settings.sessionEnd}`,
       '─'.repeat(44),
-      ...results.map(r =>
-        `${r.name.padEnd(6)} สนาม:${fmt(r.courtCost, round).padStart(8)} | ลูก:${fmt(r.shuttleCost, round).padStart(8)} | รวม: ฿${fmt(r.total, round)}`
-      ),
+      ...results.map(r => `${r.name.padEnd(6)} สนาม:${fmt(r.courtCost,round).padStart(8)} | ลูก:${fmt(r.shuttleCost,round).padStart(8)} | รวม: ฿${fmt(r.total,round)}`),
       '─'.repeat(44),
-      `ค่าสนามรวม : ฿${fmt(totalCourt, round)}`,
-      `ค่าลูกรวม  : ฿${fmt(totalShuttle, round)}`,
-      `รวมทั้งหมด : ฿${fmt(grandTotal, round)}`,
+      `ค่าสนามรวม : ฿${fmt(totalCourt,round)}`,
+      `ค่าลูกรวม  : ฿${fmt(totalShuttle,round)}`,
+      `รวมทั้งหมด : ฿${fmt(grandTotal,round)}`,
     ];
-    try { await navigator.clipboard.writeText(lines.join('\n')); alert('คัดลอกแล้ว! 📋'); }
+    try { await navigator.clipboard.writeText(lines.join('\n')); showToast('คัดลอกแล้ว! 📋'); }
     catch { alert('ไม่สามารถคัดลอกได้ กรุณาใช้ Export รูปแทนครับ'); }
   };
 
@@ -757,7 +660,6 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', background: '#0a1a0f' }}>
 
-      {/* ── EXPORT LOADING OVERLAY ── */}
       {loading && (
         <div className="overlay">
           <div className="spinner" />
@@ -766,22 +668,39 @@ function App() {
         </div>
       )}
 
-      {/* ── HEADER ── */}
+      {toast && <div className="toast">{toast}</div>}
+
+      {/* HEADER */}
       <header className="safe-top" style={{ position: 'relative', overflow: 'hidden', background: '#050e07', borderBottom: '1px solid #173d21', padding: '22px 16px' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: .05, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 1, height: '100%', background: '#a3e635' }} />
           <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 1, background: '#a3e635' }} />
         </div>
-        <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-          <div>
-            <h1 style={{ fontFamily: 'Bebas Neue', fontSize: 'clamp(28px, 8vw, 50px)', color: 'white', letterSpacing: 6, lineHeight: 1, margin: 0 }}>
-              BADMINTON<span style={{ color: '#a3e635' }}>.</span>SPLIT
-            </h1>
-            <p style={{ color: '#22c55e', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
-              คำนวณค่าใช้จ่ายยุติธรรม · รองรับลูกหลายชุด-หลายราคา
-            </p>
+        <div style={{ maxWidth: 820, margin: '0 auto', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h1 style={{ fontFamily: 'Bebas Neue', fontSize: 'clamp(28px,8vw,50px)', color: 'white', letterSpacing: 6, lineHeight: 1, margin: 0 }}>
+                BADMINTON<span style={{ color: '#a3e635' }}>.</span>SPLIT
+              </h1>
+              <p style={{ color: '#22c55e', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
+                คำนวณค่าใช้จ่ายยุติธรรม · รองรับลูกหลายชุด-หลายราคา
+              </p>
+            </div>
+            <span style={{ fontSize: 42, opacity: .85 }}>🏸</span>
           </div>
-          <span style={{ fontSize: 42, opacity: .85 }}>🏸</span>
+
+          {/* ── Save status bar ── */}
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className={`save-dot ${saveStatus === 'saving' ? 'saving' : ''}`}>
+              <span className="dot" />
+              {saveStatus === 'saving' ? 'กำลังบันทึก...' : 'บันทึกอัตโนมัติแล้ว'}
+            </span>
+            {saved && (
+              <span style={{ fontSize: 11, color: '#1f5229' }}>
+                · ข้อมูลจะอยู่แม้ปิด browser
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
@@ -790,7 +709,7 @@ function App() {
         {/* Quick actions */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
           <button className="btn-ghost" onClick={loadExample}>🧪 โหลดตัวอย่าง</button>
-          <button className="btn-ghost" onClick={clearAll}>🗑️ เคลียร์ทั้งหมด</button>
+          <button className="btn-ghost" onClick={clearAll}>🗑️ ล้างข้อมูล</button>
         </div>
 
         {/* ── COURT ── */}
@@ -824,21 +743,18 @@ function App() {
             </div>
             <button className="btn-lime" onClick={() => setBatches(p => [...p, makeBatch()])}>+ เพิ่มชุดลูก</button>
           </div>
-
           {batches.map((b, i) => (
             <BatchRow key={b.id} batch={b} index={i}
               startNum={batchNums[i].start} endNum={batchNums[i].end}
               onChange={updB} onRemove={id => setBatches(p => p.filter(x => x.id !== id))}
               canRemove={batches.length > 1} />
           ))}
-
           <ShuttleMap batches={batches} />
-
           {totalShuttles > 0 && (
             <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(163,230,53,.06)', border: '1px solid rgba(163,230,53,.2)', borderRadius: 8 }}>
               <p style={{ color: '#a3e635', fontSize: 13, fontWeight: 700 }}>
                 🏸 รวมลูกทั้งหมด: {totalShuttles} ลูก &nbsp;·&nbsp;
-                ค่าลูกรวม: {batches.reduce((s, b) => s + Number(b.count)*Number(b.price), 0).toLocaleString('th-TH')} บาท
+                ค่าลูกรวม: {batches.reduce((s,b)=>s+Number(b.count)*Number(b.price),0).toLocaleString('th-TH')} บาท
               </p>
             </div>
           )}
@@ -850,14 +766,12 @@ function App() {
             <h2 style={H2}>PLAYERS <span style={{ color: '#166534', fontSize: 20 }}>({players.length})</span></h2>
             <button className="btn-lime" onClick={() => setPlayers(p => [...p, makePlayer(settings.sessionStart)])}>+ เพิ่มผู้เล่น</button>
           </div>
-
           {players.length === 0 && (
             <div className="card" style={{ textAlign: 'center', padding: '36px 20px', borderStyle: 'dashed', borderColor: '#1f5229', color: '#166534' }}>
               <p style={{ fontSize: 32, marginBottom: 8 }}>👤</p>
               <p style={{ fontWeight: 600 }}>ยังไม่มีผู้เล่น กด "เพิ่มผู้เล่น" เพื่อเริ่ม</p>
             </div>
           )}
-
           {players.map((p, i) => (
             <PlayerRow key={p.id} player={p} index={i}
               settings={settings} totalShuttles={totalShuttles} batches={batches}
@@ -879,36 +793,22 @@ function App() {
             <div className="action-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
               <h2 style={H2}>RESULTS</h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button
-                  className="btn-toggle"
-                  onClick={() => setRound(r => !r)}
-                  style={{
-                    background: round ? '#a3e635' : '#0f2a17',
-                    color: round ? '#050e07' : '#4ade80',
-                    border: round ? '1px solid #a3e635' : '1px solid #173d21',
-                  }}
-                >
+                <button className="btn-toggle" onClick={() => setRound(r => !r)}
+                  style={{ background: round?'#a3e635':'#0f2a17', color: round?'#050e07':'#4ade80', border: round?'1px solid #a3e635':'1px solid #173d21' }}>
                   {round ? '✓ ปัดเศษ' : '⊙ ปัดเศษ'}
                 </button>
                 <button className="btn-ghost" onClick={copyText}>📋 คัดลอก</button>
-                <button className="btn-ghost" onClick={handleExport}
-                  style={{ background: '#132a13', borderColor: '#1f5229' }}>
-                  📸 Export
-                </button>
+                <button className="btn-ghost" onClick={handleExport} style={{ background: '#132a13', borderColor: '#1f5229' }}>📸 Export</button>
               </div>
             </div>
-
-            {/* Result area captured for export */}
-            <div ref={resultRef} className="card export-snapshot"
-              style={{ border: '1px solid #1f5229', padding: '18px 18px 22px' }}>
-              {/* Branding header — visible in exported image */}
+            <div ref={resultRef} className="card export-snapshot" style={{ border: '1px solid #1f5229', padding: '18px 18px 22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid #173d21' }}>
                 <div>
                   <p style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: 'white', letterSpacing: 4, margin: 0 }}>
                     BADMINTON<span style={{ color: '#a3e635' }}>.</span>SPLIT
                   </p>
                   <p style={{ color: '#4ade80', fontSize: 12, margin: '2px 0 0' }}>
-                    สรุปค่าใช้จ่าย — {new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    สรุปค่าใช้จ่าย — {new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' })}
                   </p>
                 </div>
                 <span style={{ fontSize: 28 }}>🏸</span>
