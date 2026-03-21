@@ -7,7 +7,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Badminton Split 🏸</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,191 +16,144 @@
   <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    *, *::before, *::after { box-sizing: border-box; -webkit-box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; }
     html { height: 100%; -webkit-text-size-adjust: 100%; }
     body {
-      background: #0a1a0f;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      min-height: 100%;
-      touch-action: manipulation;
-      -webkit-touch-callout: none;
-      overscroll-behavior: none;
+      background: #0a1a0f; font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased; min-height: 100%;
+      touch-action: manipulation; overscroll-behavior: none; margin: 0;
     }
     .safe-top    { padding-top: env(safe-area-inset-top); }
     .safe-bottom { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
-
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #0a1a0f; }
     ::-webkit-scrollbar-thumb { background: #1f5229; border-radius: 3px; }
 
     .inp {
       width: 100%; background: #0f2a17; border: 1px solid #173d21;
-      border-radius: 10px; padding: 11px 13px; color: white;
-      font-size: 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+      border-radius: 10px; padding: 10px 12px; color: white;
+      font-size: 15px; font-family: 'Plus Jakarta Sans', sans-serif;
       outline: none; -webkit-appearance: none; appearance: none;
       transition: border-color .2s, box-shadow .2s;
-      -webkit-tap-highlight-color: transparent;
     }
     .inp::placeholder { color: #1a3d22; }
-    .inp:focus { border-color: #a3e635; box-shadow: 0 0 0 3px rgba(163,230,53,.18); }
+    .inp:focus { border-color: #a3e635; box-shadow: 0 0 0 3px rgba(163,230,53,.15); }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
     input[type=time]::-webkit-calendar-picker-indicator {
-      filter: invert(.6) sepia(1) hue-rotate(80deg); cursor: pointer; padding: 4px;
+      filter: invert(.5) sepia(1) hue-rotate(80deg); cursor: pointer;
     }
-    input[type=time] { min-height: 44px; }
+    input[type=time] { min-height: 42px; }
 
-    .lbl { display: block; font-size: 11px; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 5px; }
-    .card { background: #0f2a17; border: 1px solid #173d21; border-radius: 14px; padding: 18px; }
+    .lbl { display: block; font-size: 10px; font-weight: 700; color: #4ade80;
+           text-transform: uppercase; letter-spacing: .09em; margin-bottom: 4px; }
+    .card { background: #0f2a17; border: 1px solid #173d21; border-radius: 14px; padding: 16px; }
 
-    .btn-lime, .btn-ghost, .btn-red, .btn-toggle {
-      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-      cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-appearance: none; border: none;
-    }
     .btn-lime {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       background: #a3e635; color: #050e07; font-weight: 700; font-size: 14px;
-      min-height: 44px; padding: 0 18px; border-radius: 10px; white-space: nowrap;
-      transition: background .15s, transform .1s;
+      min-height: 42px; padding: 0 16px; border-radius: 10px; border: none;
+      cursor: pointer; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent;
     }
     .btn-lime:active { background: #bef264; transform: scale(.96); }
     .btn-ghost {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       background: #0f2a17; color: #86efac; font-weight: 600; font-size: 13px;
-      min-height: 44px; padding: 0 14px; border-radius: 10px;
-      border: 1px solid #173d21 !important; white-space: nowrap;
-      transition: border-color .15s, color .15s;
+      min-height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid #173d21;
+      cursor: pointer; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: border-color .15s, color .15s; -webkit-tap-highlight-color: transparent;
     }
-    .btn-ghost:active { border-color: #a3e635 !important; color: #a3e635; }
-    .btn-ghost:disabled { opacity: .5; }
+    .btn-ghost:active { border-color: #a3e635; color: #a3e635; }
     .btn-red {
-      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-      background: rgba(220,38,38,.1); border: 1px solid rgba(220,38,38,.3) !important;
-      color: #f87171; border-radius: 8px; min-height: 36px; padding: 0 12px;
-      font-size: 13px; font-weight: 700; transition: background .15s;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(220,38,38,.1); border: 1px solid rgba(220,38,38,.25);
+      color: #f87171; border-radius: 8px; min-height: 34px; padding: 0 10px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif; transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
     }
     .btn-red:active { background: rgba(220,38,38,.22); }
     .btn-toggle {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      min-height: 44px; padding: 0 14px; border-radius: 10px;
-      font-weight: 700; font-size: 13px; transition: all .15s; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px; min-height: 42px;
+      padding: 0 14px; border-radius: 10px; font-weight: 700; font-size: 13px;
+      cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .15s; white-space: nowrap; -webkit-tap-highlight-color: transparent;
     }
-
     .batch-tag {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 11px; font-weight: 700; padding: 3px 9px;
       border-radius: 99px; border: 1px solid; white-space: nowrap;
     }
-
-    /* Save indicator */
     .save-dot {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 12px; color: #4ade80; font-weight: 600;
-      padding: 4px 10px; border-radius: 99px;
+      display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
+      color: #4ade80; font-weight: 600; padding: 4px 10px; border-radius: 99px;
       background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2);
-      transition: opacity .3s;
     }
     .save-dot.saving { color: #fbbf24; border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.08); }
-    .save-dot .dot {
-      width: 7px; height: 7px; border-radius: 50%; background: currentColor;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+    .save-dot .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    /* Toast notification */
     .toast {
       position: fixed; bottom: max(24px, env(safe-area-inset-bottom));
       left: 50%; transform: translateX(-50%);
       background: #173d21; border: 1px solid rgba(163,230,53,.4);
       color: #a3e635; font-size: 14px; font-weight: 600;
-      padding: 12px 22px; border-radius: 99px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.5);
-      z-index: 1000; white-space: nowrap;
-      animation: toastIn .25s ease-out;
+      padding: 12px 22px; border-radius: 99px; box-shadow: 0 4px 24px rgba(0,0,0,.5);
+      z-index: 1000; white-space: nowrap; animation: toastIn .25s ease-out;
     }
-    @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+    @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
     .rtable { width: 100%; border-collapse: collapse; }
-    .rtable th { background: #173d21; color: #4ade80; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding: 10px 10px; text-align: right; font-weight: 700; }
+    .rtable th { background: #173d21; color: #4ade80; font-size: 10px; text-transform: uppercase;
+                 letter-spacing: .06em; padding: 9px 10px; text-align: right; font-weight: 700; }
     .rtable th:first-child { text-align: left; }
-    .rtable td { padding: 10px 10px; text-align: right; color: #bbf7d0; border-top: 1px solid #173d21; font-size: 13px; }
+    .rtable td { padding: 9px 10px; text-align: right; color: #bbf7d0; border-top: 1px solid #173d21; font-size: 13px; }
     .rtable td:first-child { text-align: left; color: white; font-weight: 700; }
     .rtable tr:nth-child(odd) td { background: rgba(5,14,7,.45); }
-    .rtable tfoot td { background: #173d21; font-weight: 700; color: white; border-top: 2px solid rgba(163,230,53,.3); font-size: 13px; }
+    .rtable tfoot td { background: #173d21; font-weight: 700; color: white; border-top: 2px solid rgba(163,230,53,.3); }
     .lime-col { color: #a3e635 !important; font-weight: 800 !important; }
 
-    .bc0 { background: rgba(163,230,53,.08); border-color: rgba(163,230,53,.4); color: #a3e635; }
-    .bc1 { background: rgba(56,189,248,.08); border-color: rgba(56,189,248,.4); color: #7dd3fc; }
-    .bc2 { background: rgba(251,146,60,.08); border-color: rgba(251,146,60,.4); color: #fdba74; }
-    .bc3 { background: rgba(216,180,254,.08); border-color: rgba(216,180,254,.4); color: #d8b4fe; }
-    .bc4 { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.4); color: #fcd34d; }
+    .bc0{background:rgba(163,230,53,.08);border-color:rgba(163,230,53,.4);color:#a3e635}
+    .bc1{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.4);color:#7dd3fc}
+    .bc2{background:rgba(251,146,60,.08);border-color:rgba(251,146,60,.4);color:#fdba74}
+    .bc3{background:rgba(216,180,254,.08);border-color:rgba(216,180,254,.4);color:#d8b4fe}
+    .bc4{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.4);color:#fcd34d}
 
-    /* Court card accent borders */
-    .court-card-0 { border: 2px solid rgba(163,230,53,.45) !important; }
-    .court-card-1 { border: 2px solid rgba(56,189,248,.45) !important; }
-    .court-card-2 { border: 2px solid rgba(251,146,60,.45) !important; }
-    .court-card-3 { border: 2px solid rgba(216,180,254,.45) !important; }
-    .court-card-4 { border: 2px solid rgba(251,191,36,.45) !important; }
-    .court-badge-0 { background: #a3e635; color: #050e07; }
-    .court-badge-1 { background: #38bdf8; color: #050e07; }
-    .court-badge-2 { background: #fb923c; color: #050e07; }
-    .court-badge-3 { background: #d8b4fe; color: #050e07; }
-    .court-badge-4 { background: #fcd34d; color: #050e07; }
-    .court-title-0 { color: #a3e635; }
-    .court-title-1 { color: #38bdf8; }
-    .court-title-2 { color: #fb923c; }
-    .court-title-3 { color: #d8b4fe; }
-    .court-title-4 { color: #fcd34d; }
-    .inp-courtname {
-      background: transparent; border: none; border-bottom: 1px solid #173d21;
-      color: white; font-size: 15px; font-weight: 700;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      padding: 2px 4px; outline: none; width: 120px;
-      -webkit-tap-highlight-color: transparent;
-      transition: border-color .2s;
-    }
-    .inp-courtname:focus { border-bottom-color: #a3e635; }
-
-    @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
     .slide-in { animation: slideIn .2s ease-out; }
-    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     .fade-in { animation: fadeIn .3s ease-out; }
     .export-snapshot { background: #0a1a0f !important; }
-    .export-snapshot * { -webkit-font-smoothing: antialiased !important; }
 
-    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .overlay {
+      position: fixed; inset: 0; z-index: 999; background: rgba(5,14,7,.88);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .spinner { width: 40px; height: 40px; border: 3px solid #1f5229; border-top-color: #a3e635;
+               border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     .gp { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     .gb { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-    @media (max-width: 600px) {
-      .g3 { grid-template-columns: 1fr 1fr; }
-      .g3 .span2 { grid-column: span 2; }
-      .gp { grid-template-columns: 1fr 1fr; }
-      .gp .pn { grid-column: span 2; }
-      .gb { grid-template-columns: 1fr 1fr; }
-      .gb .span2 { grid-column: span 2; }
-      .card { padding: 14px; }
-      .rtable th { font-size: 9px; padding: 8px 7px; }
-      .rtable td { font-size: 12px; padding: 8px 7px; }
-      .action-bar { flex-wrap: wrap; }
-    }
+    /* court-row grid: ชื่อ | ราคา | เวลาเริ่ม | เวลาสิ้นสุด */
+    .court-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; align-items: end; }
 
-    .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    .overlay {
-      position: fixed; inset: 0; z-index: 999;
-      background: rgba(5,14,7,.88);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    @media(max-width:600px){
+      .g3{grid-template-columns:1fr 1fr} .g3 .span2{grid-column:span 2}
+      .gp{grid-template-columns:1fr 1fr} .gp .pn{grid-column:span 2}
+      .gb{grid-template-columns:1fr 1fr} .gb .span2{grid-column:span 2}
+      .card{padding:12px}
+      .rtable th{font-size:9px;padding:7px 6px} .rtable td{font-size:12px;padding:7px 6px}
+      .action-bar{flex-wrap:wrap}
+      .court-grid { grid-template-columns: 1fr 1fr; }
+      .court-grid .court-name { grid-column: span 2; }
     }
-    .spinner {
-      width: 40px; height: 40px; border: 3px solid #1f5229; border-top-color: #a3e635;
-      border-radius: 50%; animation: spin .7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -210,236 +162,299 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-/* ═══════════════════════════════════════════
-   STORAGE KEY & HELPERS
-═══════════════════════════════════════════ */
-const STORAGE_KEY = 'badminton_split_v2';
+/* ══════════════════════════════════════════
+   STORAGE
+══════════════════════════════════════════ */
+const STORAGE_KEY = 'badminton_split_v4';
+const loadSaved = () => { try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch{return null;} };
+const saveTo    = d  => { try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));return true;}catch{return false;} };
 
-function loadFromStorage() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function saveToStorage(data) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════════
    UTILS
-═══════════════════════════════════════════ */
-const t2m = t => {
-  if (!t?.includes(':')) return 0;
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-};
-const uid = () => Math.random().toString(36).slice(2, 9);
-const fmt = (n, round) =>
-  round
-    ? Math.round(n).toLocaleString('th-TH')
-    : parseFloat(n.toFixed(2)).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+══════════════════════════════════════════ */
+const t2m = t => { if(!t?.includes(':'))return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
+const uid = () => Math.random().toString(36).slice(2,9);
+const fmt = (n,round) => round
+  ? Math.round(n).toLocaleString('th-TH')
+  : parseFloat(n.toFixed(2)).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:2});
 
-const BCLS = ['bc0','bc1','bc2','bc3','bc4'];
-const BICO = ['🟢','🔵','🟠','🟣','🟡'];
-const BBDR = ['rgba(163,230,53,.35)','rgba(56,189,248,.35)','rgba(251,146,60,.35)','rgba(216,180,254,.35)','rgba(251,191,36,.35)'];
-const BBBG = ['rgba(163,230,53,.05)','rgba(56,189,248,.05)','rgba(251,146,60,.05)','rgba(216,180,254,.05)','rgba(251,191,36,.05)'];
-const bCls = i => BCLS[i % 5];
-const bIco = i => BICO[i % 5];
+const BCLS=['bc0','bc1','bc2','bc3','bc4'];
+const BICO=['🟢','🔵','🟠','🟣','🟡'];
+const BBDR=['rgba(163,230,53,.35)','rgba(56,189,248,.35)','rgba(251,146,60,.35)','rgba(216,180,254,.35)','rgba(251,191,36,.35)'];
+const BBBG=['rgba(163,230,53,.05)','rgba(56,189,248,.05)','rgba(251,146,60,.05)','rgba(216,180,254,.05)','rgba(251,191,36,.05)'];
+const bCls=i=>BCLS[i%5], bIco=i=>BICO[i%5];
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════════
    CALCULATION ENGINE
-═══════════════════════════════════════════ */
+   Logic:
+   - แต่ละ court มีเวลาเริ่ม-สิ้นสุดของตัวเอง
+   - แบ่งเป็น time slots ทีละ 60 นาที
+   - แต่ละ slot: รวมเฉพาะ court ที่เปิดอยู่ → หารด้วยคนที่อยู่ในช่วงนั้น
+══════════════════════════════════════════ */
 function buildShuttleList(batches) {
-  const list = []; let num = 1;
-  batches.forEach((b, bi) => {
-    for (let i = 0; i < Math.max(0, Number(b.count) || 0); i++)
-      list.push({ shuttleNo: num++, batchIdx: bi, price: Number(b.price) || 0 });
+  const list=[]; let num=1;
+  batches.forEach((b,bi)=>{
+    for(let i=0;i<Math.max(0,Number(b.count)||0);i++)
+      list.push({shuttleNo:num++,batchIdx:bi,price:Number(b.price)||0});
   });
   return list;
 }
 
-function calculate(courts, batches) {
-  const shuttles = buildShuttleList(batches);
-  if (!shuttles.length) return null;
+function calculate(courts, players, batches) {
+  if(!courts||!courts.length||!players.length) return null;
+  const shuttles=buildShuttleList(batches);
+  if(!shuttles.length) return null;
 
-  // รวม players จากทุก court พร้อม tag courtId
-  const allPlayers = courts.flatMap(c => c.players.map(p => ({ ...p, courtId: c.id })));
-  if (!allPlayers.length) return null;
+  const allStarts=courts.map(c=>t2m(c.startTime)).filter(v=>v>0);
+  const allEnds  =courts.map(c=>t2m(c.endTime)).filter(v=>v>0);
+  if(!allStarts.length||!allEnds.length) return null;
+  const globalStart=Math.min(...allStarts), globalEnd=Math.max(...allEnds);
+  if(globalEnd<=globalStart) return null;
 
-  // ── ค่าสนาม: คำนวณแยกต่อ court ──
-  const courtCosts = Object.fromEntries(allPlayers.map(p => [p.id, 0]));
-  courts.forEach(court => {
-    const sMin = t2m(court.sessionStart), eMin = t2m(court.sessionEnd);
-    if (eMin <= sMin || !court.players.length) return;
-    const slots = [];
-    for (let t = sMin; t < eMin; t += 60)
-      slots.push({ start: t, end: Math.min(t + 60, eMin) });
-    slots.forEach(sl => {
-      const f = (sl.end - sl.start) / 60;
-      const active = court.players.filter(p => t2m(p.startTime) < sl.end && t2m(p.endTime) > sl.start);
-      if (!active.length) return;
-      const cpp = Number(court.courtPricePerHour) * f / active.length;
-      active.forEach(p => (courtCosts[p.id] += cpp));
+  // slots ทีละ 60 นาที
+  const slots=[];
+  for(let t=globalStart;t<globalEnd;t+=60)
+    slots.push({start:t,end:Math.min(t+60,globalEnd)});
+
+  const courtCosts=Object.fromEntries(players.map(p=>[p.id,0]));
+  const shutCosts =Object.fromEntries(players.map(p=>[p.id,0]));
+  const batchCosts=Object.fromEntries(players.map(p=>[p.id,batches.map(()=>0)]));
+
+  slots.forEach(sl=>{
+    // court ที่เปิดอยู่ใน slot นี้
+    const openCourts=courts.filter(c=>t2m(c.startTime)<sl.end&&t2m(c.endTime)>sl.start);
+    if(!openCourts.length) return;
+    const slotRate=openCourts.reduce((s,c)=>s+(Number(c.price)||0),0);
+
+    // ผู้เล่นที่อยู่ใน slot นี้
+    const activePlayers=players.filter(p=>t2m(p.startTime)<sl.end&&t2m(p.endTime)>sl.start);
+    if(!activePlayers.length) return;
+
+    activePlayers.forEach(p=>{
+      // overlap fraction ของ player ใน slot นี้
+      const overlapStart=Math.max(sl.start,t2m(p.startTime));
+      const overlapEnd  =Math.min(sl.end,  t2m(p.endTime));
+      const frac=(overlapEnd-overlapStart)/60;
+      courtCosts[p.id]+=slotRate*frac/activePlayers.length;
     });
   });
 
-  // ── ค่าลูก: pool รวมทุก court ──
-  const shutCosts  = Object.fromEntries(allPlayers.map(p => [p.id, 0]));
-  const batchCosts = Object.fromEntries(allPlayers.map(p => [p.id, batches.map(() => 0)]));
-  shuttles.forEach(({ shuttleNo, batchIdx, price }) => {
-    const using = allPlayers.filter(p => Number(p.shuttleStart) <= shuttleNo && Number(p.shuttleEnd) >= shuttleNo);
-    if (!using.length) return;
-    const cpp = price / using.length;
-    using.forEach(p => { shutCosts[p.id] += cpp; batchCosts[p.id][batchIdx] += cpp; });
+  shuttles.forEach(({shuttleNo,batchIdx,price})=>{
+    const using=players.filter(p=>Number(p.shuttleStart)<=shuttleNo&&Number(p.shuttleEnd)>=shuttleNo);
+    if(!using.length) return;
+    const cpp=price/using.length;
+    using.forEach(p=>{shutCosts[p.id]+=cpp;batchCosts[p.id][batchIdx]+=cpp;});
   });
 
-  // ── จัดกลุ่ม results ต่อ court ──
-  const courtResults = courts.map(court => ({
-    courtId: court.id,
-    courtName: court.name,
-    results: court.players.map(p => ({
-      id: p.id, name: p.name,
-      startTime: p.startTime, endTime: p.endTime,
-      shuttleStart: p.shuttleStart, shuttleEnd: p.shuttleEnd,
-      courtCost:   courtCosts[p.id] || 0,
-      shuttleCost: shutCosts[p.id]  || 0,
-      batchCosts:  batchCosts[p.id],
-      total: (courtCosts[p.id] || 0) + (shutCosts[p.id] || 0),
-    })),
+  const results=players.map(p=>({
+    id:p.id,name:p.name,
+    startTime:p.startTime,endTime:p.endTime,
+    shuttleStart:p.shuttleStart,shuttleEnd:p.shuttleEnd,
+    courtCost:  courtCosts[p.id]||0,
+    shuttleCost:shutCosts[p.id]||0,
+    batchCosts: batchCosts[p.id],
+    total:(courtCosts[p.id]||0)+(shutCosts[p.id]||0),
   }));
 
-  const allResults   = courtResults.flatMap(c => c.results);
-  const totalCourt   = allResults.reduce((s, r) => s + r.courtCost,   0);
-  const totalShuttle = allResults.reduce((s, r) => s + r.shuttleCost, 0);
-  const grandTotal   = totalCourt + totalShuttle;
-  return { courtResults, allResults, totalCourt, totalShuttle, grandTotal, totalShuttlesUsed: shuttles.length, shuttles };
+  const totalCourt  =results.reduce((s,r)=>s+r.courtCost,0);
+  const totalShuttle=results.reduce((s,r)=>s+r.shuttleCost,0);
+  return{results,totalCourt,totalShuttle,grandTotal:totalCourt+totalShuttle,totalShuttlesUsed:shuttles.length,shuttles};
 }
 
-function validate(courts, batches) {
-  const errs  = [];
-  const totalS = buildShuttleList(batches).length;
-  if (!totalS) errs.push('⚠️ ต้องมีลูกแบดอย่างน้อย 1 ลูก');
-  batches.forEach((b, i) => {
-    if (Number(b.count) < 1)  errs.push(`⚠️ [ชุดที่ ${i+1}] จำนวนลูกต้องอย่างน้อย 1`);
-    if (Number(b.price) <= 0) errs.push(`⚠️ [ชุดที่ ${i+1}] ราคาต้องมากกว่า 0`);
-  });
-  courts.forEach((court, ci) => {
-    const cLbl = court.name || `สนาม ${ci+1}`;
-    const sMin = t2m(court.sessionStart), eMin = t2m(court.sessionEnd);
-    if (eMin <= sMin)                         errs.push(`⚠️ [${cLbl}] เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น`);
-    if (Number(court.courtPricePerHour) <= 0) errs.push(`⚠️ [${cLbl}] ค่าสนามต้องมากกว่า 0`);
-    court.players.forEach((p, i) => {
-      const lbl = p.name || `ผู้เล่นคนที่ ${i+1}`;
-      const ps = t2m(p.startTime), pe = t2m(p.endTime);
-      if (!p.name.trim())  errs.push(`⚠️ [${cLbl}] [${lbl}] กรุณากรอกชื่อ`);
-      if (pe <= ps)        errs.push(`⚠️ [${cLbl}] [${lbl}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`);
-      if (ps < sMin || pe > eMin) errs.push(`⚠️ [${cLbl}] [${lbl}] เวลาต้องอยู่ในช่วง ${court.sessionStart}–${court.sessionEnd}`);
-      if (Number(p.shuttleStart) > Number(p.shuttleEnd)) errs.push(`⚠️ [${cLbl}] [${lbl}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`);
-      if (Number(p.shuttleEnd) > totalS) errs.push(`⚠️ [${cLbl}] [${lbl}] ลูกสุดท้าย (${p.shuttleEnd}) เกินจำนวนลูกทั้งหมด (${totalS})`);
+/* ══════════════════════════════════════════
+   VALIDATION
+══════════════════════════════════════════ */
+function validate(courts,players,batches) {
+  const errs=[];
+  if(!courts||!courts.length){
+    errs.push('⚠️ ต้องมีสนามอย่างน้อย 1 สนาม');
+  } else {
+    courts.forEach((c,i)=>{
+      const lbl=c.name||`สนามที่ ${i+1}`;
+      if(!c.name)  errs.push(`⚠️ [สนามที่ ${i+1}] กรุณากรอกชื่อสนาม`);
+      if(Number(c.price)<=0) errs.push(`⚠️ [${lbl}] ค่าสนามต้องมากกว่า 0`);
+      if(!c.startTime) errs.push(`⚠️ [${lbl}] กรุณากรอกเวลาเริ่ม`);
+      if(!c.endTime)   errs.push(`⚠️ [${lbl}] กรุณากรอกเวลาสิ้นสุด`);
+      if(c.startTime&&c.endTime&&t2m(c.endTime)<=t2m(c.startTime))
+        errs.push(`⚠️ [${lbl}] เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม`);
     });
+  }
+  const totalS=buildShuttleList(batches).length;
+  if(!totalS) errs.push('⚠️ ต้องมีลูกแบดอย่างน้อย 1 ลูก');
+  batches.forEach((b,i)=>{
+    if(Number(b.count)<1)  errs.push(`⚠️ [ชุดที่ ${i+1}] จำนวนลูกต้องอย่างน้อย 1`);
+    if(Number(b.price)<=0) errs.push(`⚠️ [ชุดที่ ${i+1}] ราคาต้องมากกว่า 0`);
   });
+  if(courts&&courts.length){
+    const starts=courts.map(c=>t2m(c.startTime)).filter(v=>v>0);
+    const ends  =courts.map(c=>t2m(c.endTime)).filter(v=>v>0);
+    if(starts.length&&ends.length){
+      const gS=Math.min(...starts),gE=Math.max(...ends);
+      players.forEach((p,i)=>{
+        const lbl=p.name||`ผู้เล่นคนที่ ${i+1}`;
+        const ps=t2m(p.startTime),pe=t2m(p.endTime);
+        if(!p.name.trim()) errs.push(`⚠️ [${lbl}] กรุณากรอกชื่อ`);
+        if(pe<=ps)         errs.push(`⚠️ [${lbl}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`);
+        if(ps<gS||pe>gE)   errs.push(`⚠️ [${lbl}] เวลาต้องอยู่ในช่วงที่สนามเปิด`);
+        if(Number(p.shuttleStart)>Number(p.shuttleEnd)) errs.push(`⚠️ [${lbl}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`);
+        if(Number(p.shuttleEnd)>totalS) errs.push(`⚠️ [${lbl}] ลูกสุดท้าย (${p.shuttleEnd}) เกินจำนวนลูกทั้งหมด (${totalS})`);
+      });
+    }
+  }
   return errs;
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════════
    DEFAULT / EXAMPLE DATA
-═══════════════════════════════════════════ */
-const DEFAULT_COURTS  = [makeCourt(0)];
-const DEFAULT_BATCHES = [{ id: uid(), count: 7, price: 80, label: '' }];
+══════════════════════════════════════════ */
+const makeCourt  = () => ({id:uid(),name:'',price:0,startTime:'18:00',endTime:'21:00'});
+const makeBatch  = () => ({id:uid(),count:1,price:80,label:''});
+const makePlayer = (s='18:00') => ({id:uid(),name:'',startTime:s,endTime:'',shuttleStart:1,shuttleEnd:1});
+
+const DEFAULT_COURTS  = [{id:uid(),name:'Court A',price:140,startTime:'18:00',endTime:'21:00'}];
+const DEFAULT_BATCHES = [{id:uid(),count:7,price:80,label:''}];
+const DEFAULT_PLAYERS = [{id:uid(),name:'',startTime:'18:00',endTime:'',shuttleStart:1,shuttleEnd:1}];
 
 const makeExample = () => ({
-  courts: [
-    {
-      id: uid(), name: 'สนาม A', courtPricePerHour: 140,
-      sessionStart: '18:00', sessionEnd: '21:00',
-      players: [
-        {id:uid(),name:'ดิฟ',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
-        {id:uid(),name:'นาย',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
-        {id:uid(),name:'เอิท', startTime:'18:00',endTime:'21:00',shuttleStart:2,shuttleEnd:7},
-        {id:uid(),name:'ดรอย', startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
-      ],
-    },
-    {
-      id: uid(), name: 'สนาม B', courtPricePerHour: 160,
-      sessionStart: '18:00', sessionEnd: '20:00',
-      players: [
-        {id:uid(),name:'มาชร์',startTime:'18:00',endTime:'20:00',shuttleStart:1,shuttleEnd:7},
-        {id:uid(),name:'ปริ้น',startTime:'18:00',endTime:'20:00',shuttleStart:1,shuttleEnd:7},
-        {id:uid(),name:'บิว',  startTime:'18:00',endTime:'20:00',shuttleStart:2,shuttleEnd:7},
-        {id:uid(),name:'ปิ่น', startTime:'19:00',endTime:'20:00',shuttleStart:3,shuttleEnd:7},
-      ],
-    },
+  courts:[
+    {id:uid(),name:'Court A',price:140,startTime:'18:00',endTime:'21:00'},
+    {id:uid(),name:'Court B',price:200,startTime:'19:00',endTime:'21:00'},
   ],
-  batches: [
-    { id: uid(), count: 3, price: 50, label: 'ลูกของดิฟ' },
-    { id: uid(), count: 4, price: 80, label: 'ซื้อเพิ่ม' },
+  batches:[
+    {id:uid(),count:3,price:50,label:'ลูกของดิฟ'},
+    {id:uid(),count:4,price:80,label:'ซื้อเพิ่ม'},
+  ],
+  players:[
+    {id:uid(),name:'ดิฟ',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
+    {id:uid(),name:'นาย',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
+    {id:uid(),name:'เอิท', startTime:'18:00',endTime:'21:00',shuttleStart:2,shuttleEnd:7},
+    {id:uid(),name:'ดรอย', startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
+    {id:uid(),name:'มาชร์',startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
+    {id:uid(),name:'ปริ้น',startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
+    {id:uid(),name:'บิว',  startTime:'18:00',endTime:'21:00',shuttleStart:2,shuttleEnd:7},
+    {id:uid(),name:'ปิ่น', startTime:'19:00',endTime:'21:00',shuttleStart:3,shuttleEnd:7},
   ],
 });
 
-const makeBatch  = () => ({ id: uid(), count: 1, price: 80, label: '' });
-const makePlayer = (s = '18:00') => ({ id: uid(), name: '', startTime: s, endTime: '', shuttleStart: 1, shuttleEnd: 1 });
-const makeCourt  = (idx = 0) => ({
-  id: uid(),
-  name: `สนาม ${idx + 1}`,
-  courtPricePerHour: 140,
-  sessionStart: '18:00',
-  sessionEnd: '21:00',
-  players: [makePlayer('18:00')],
-});
-
-/* ═══════════════════════════════════════════
-   SHARP EXPORT
-═══════════════════════════════════════════ */
-async function exportSharpImage(element) {
+/* ══════════════════════════════════════════
+   EXPORT
+══════════════════════════════════════════ */
+async function exportSharpImage(el) {
   await document.fonts.ready;
-  const dpr = window.devicePixelRatio || 1;
-  const scale = Math.max(3, dpr * 2);
-  return html2canvas(element, {
-    backgroundColor: '#0a1a0f', scale, useCORS: true,
-    allowTaint: false, logging: false, letterRendering: true, imageTimeout: 0,
-    onclone: (doc) => {
-      const s = doc.createElement('style');
-      s.innerHTML = `* { -webkit-font-smoothing:antialiased!important; text-rendering:optimizeLegibility!important; } body{background:#0a1a0f;}`;
+  const scale=Math.max(3,(window.devicePixelRatio||1)*2);
+  return html2canvas(el,{
+    backgroundColor:'#0a1a0f',scale,useCORS:true,logging:false,letterRendering:true,imageTimeout:0,
+    onclone:doc=>{
+      const s=doc.createElement('style');
+      s.innerHTML='*{-webkit-font-smoothing:antialiased!important}body{background:#0a1a0f}';
       doc.head.appendChild(s);
-      const l = doc.createElement('link');
-      l.rel = 'stylesheet';
-      l.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap';
-      doc.head.appendChild(l);
-    },
+    }
   });
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════════
    COMPONENTS
-═══════════════════════════════════════════ */
-function ShuttleMap({ batches }) {
-  const shuttles = buildShuttleList(batches);
-  if (!shuttles.length) return null;
+══════════════════════════════════════════ */
+
+function CourtRow({court,index,onChange,onRemove,canRemove}) {
+  const hrs=t2m(court.endTime)>t2m(court.startTime)
+    ?((t2m(court.endTime)-t2m(court.startTime))/60).toFixed(1):null;
   return (
-    <div style={{ marginTop: 14 }}>
-      <p className="lbl" style={{ marginBottom: 7 }}>แผนผังลำดับลูก</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-        {shuttles.map(({ shuttleNo, batchIdx }) => (
+    <div className="slide-in" style={{marginBottom:10,padding:'12px 14px',background:'#0a1a0f',borderRadius:12,border:'1px solid #173d21'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <span style={{fontFamily:'Bebas Neue',fontSize:20,color:'#a3e635',letterSpacing:2}}>🏟️ สนามที่ {index+1}</span>
+        {canRemove&&<button className="btn-red" onClick={()=>onRemove(court.id)}>✕ ลบ</button>}
+      </div>
+      <div className="court-grid">
+        <div className="court-name">
+          <label className="lbl">ชื่อสนาม</label>
+          <input className="inp" placeholder="เช่น Court A"
+            value={court.name} onChange={e=>onChange(court.id,'name',e.target.value)} />
+        </div>
+        <div>
+          <label className="lbl">ราคา (฿/ชม.)</label>
+          <input type="number" inputMode="numeric" className="inp" min={0} placeholder="0"
+            value={court.price} onChange={e=>onChange(court.id,'price',Number(e.target.value))} />
+        </div>
+        <div>
+          <label className="lbl">เวลาเริ่ม</label>
+          <input type="time" className="inp"
+            value={court.startTime} onChange={e=>onChange(court.id,'startTime',e.target.value)} />
+        </div>
+        <div>
+          <label className="lbl">เวลาสิ้นสุด</label>
+          <input type="time" className="inp"
+            value={court.endTime} onChange={e=>onChange(court.id,'endTime',e.target.value)} />
+        </div>
+      </div>
+      {Number(court.price)>0&&hrs&&(
+        <p style={{marginTop:8,color:'#86efac',fontSize:12}}>
+          ⏱️ {hrs} ชม. × {court.price} ฿ = <strong style={{color:'#a3e635'}}>{(Number(court.price)*Number(hrs)).toLocaleString('th-TH')} บาท</strong>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BatchRow({batch,index,startNum,endNum,onChange,onRemove,canRemove}) {
+  return (
+    <div className="slide-in" style={{marginBottom:10,padding:14,borderRadius:12,border:`1px solid ${BBDR[index%5]}`,background:BBBG[index%5]}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:18}}>{bIco(index)}</span>
+          <span style={{fontFamily:'Bebas Neue',fontSize:20,color:'white',letterSpacing:2}}>ชุดที่ {index+1}</span>
+          {Number(batch.count)>0&&startNum<=endNum&&(
+            <span style={{fontSize:11,color:'#86efac',background:'rgba(134,239,172,.1)',border:'1px solid rgba(134,239,172,.2)',borderRadius:99,padding:'2px 8px'}}>
+              ลูก {startNum}–{endNum}
+            </span>
+          )}
+        </div>
+        {canRemove&&<button className="btn-red" onClick={()=>onRemove(batch.id)}>✕ ลบ</button>}
+      </div>
+      <div className="gb" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+        <div>
+          <label className="lbl">จำนวนลูก</label>
+          <input type="number" inputMode="numeric" className="inp" min={1}
+            value={batch.count} onChange={e=>onChange(batch.id,'count',e.target.value)} />
+        </div>
+        <div>
+          <label className="lbl">ราคา/ลูก (฿)</label>
+          <input type="number" inputMode="decimal" className="inp" min={0}
+            value={batch.price} onChange={e=>onChange(batch.id,'price',e.target.value)} />
+        </div>
+        <div className="span2">
+          <label className="lbl">หมายเหตุ</label>
+          <input type="text" className="inp" placeholder="เช่น ของดิฟ..."
+            value={batch.label} onChange={e=>onChange(batch.id,'label',e.target.value)} />
+        </div>
+      </div>
+      {Number(batch.count)>0&&Number(batch.price)>0&&(
+        <p style={{marginTop:8,color:'#86efac',fontSize:13}}>
+          รวมชุดนี้: <strong style={{color:'#a3e635'}}>{(Number(batch.count)*Number(batch.price)).toLocaleString('th-TH')} บาท</strong>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ShuttleMap({batches}) {
+  const shuttles=buildShuttleList(batches);
+  if(!shuttles.length) return null;
+  return (
+    <div style={{marginTop:14}}>
+      <p className="lbl" style={{marginBottom:7}}>แผนผังลำดับลูก</p>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+        {shuttles.map(({shuttleNo,batchIdx})=>(
           <span key={shuttleNo} className={`batch-tag ${bCls(batchIdx)}`}>{shuttleNo}</span>
         ))}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {batches.map((b, i) => {
-          const mine = shuttles.filter(s => s.batchIdx === i);
-          if (!mine.length) return null;
-          return (
-            <span key={b.id} className={`batch-tag ${bCls(i)}`} style={{ fontSize: 12, padding: '4px 10px' }}>
-              {bIco(i)} ชุด{i+1}: ลูก {mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo} · {b.price}฿
-              {b.label ? ` · ${b.label}` : ''}
+      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+        {batches.map((b,i)=>{
+          const mine=shuttles.filter(s=>s.batchIdx===i);
+          if(!mine.length) return null;
+          return(
+            <span key={b.id} className={`batch-tag ${bCls(i)}`} style={{fontSize:12,padding:'4px 10px'}}>
+              {bIco(i)} ชุด{i+1}: ลูก {mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo} · {b.price}฿{b.label?` · ${b.label}`:''}
             </span>
           );
         })}
@@ -448,242 +463,120 @@ function ShuttleMap({ batches }) {
   );
 }
 
-function BatchRow({ batch, index, startNum, endNum, onChange, onRemove, canRemove }) {
+function PlayerRow({player,index,courts,totalShuttles,batches,onChange,onRemove}) {
+  const shuttles=buildShuttleList(batches);
+  const bOf=n=>shuttles.find(s=>s.shuttleNo===Number(n))?.batchIdx??0;
+  const sb=bOf(player.shuttleStart),eb=bOf(player.shuttleEnd);
   return (
-    <div className="slide-in" style={{ marginBottom: 10, padding: 14, borderRadius: 12, border: `1px solid ${BBDR[index%5]}`, background: BBBG[index%5] }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>{bIco(index)}</span>
-          <span style={{ fontFamily: 'Bebas Neue', fontSize: 20, color: 'white', letterSpacing: 2 }}>ชุดที่ {index+1}</span>
-          {Number(batch.count) > 0 && startNum <= endNum && (
-            <span style={{ fontSize: 11, color: '#86efac', background: 'rgba(134,239,172,.1)', border: '1px solid rgba(134,239,172,.2)', borderRadius: 99, padding: '2px 8px' }}>
-              ลูก {startNum}–{endNum}
-            </span>
-          )}
-        </div>
-        {canRemove && <button className="btn-red" onClick={() => onRemove(batch.id)}>✕ ลบ</button>}
+    <div className="slide-in card" style={{marginBottom:12,border:'1px solid #1f5229'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <span style={{fontFamily:'Bebas Neue',fontSize:22,color:'#a3e635',letterSpacing:2}}>#{String(index+1).padStart(2,'0')}</span>
+        <button className="btn-red" onClick={()=>onRemove(player.id)}>✕ ลบ</button>
       </div>
-      <div className="gb" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-        <div>
-          <label className="lbl">จำนวนลูก</label>
-          <input type="number" inputMode="numeric" className="inp" min={1}
-            value={batch.count} onChange={e => onChange(batch.id, 'count', e.target.value)} />
-        </div>
-        <div>
-          <label className="lbl">ราคา/ลูก (฿)</label>
-          <input type="number" inputMode="decimal" className="inp" min={0}
-            value={batch.price} onChange={e => onChange(batch.id, 'price', e.target.value)} />
-        </div>
-        <div className="span2">
-          <label className="lbl">หมายเหตุ</label>
-          <input type="text" className="inp" placeholder="เช่น ของดิฟ..."
-            value={batch.label} onChange={e => onChange(batch.id, 'label', e.target.value)} />
-        </div>
-      </div>
-      {Number(batch.count) > 0 && Number(batch.price) > 0 && (
-        <p style={{ marginTop: 8, color: '#86efac', fontSize: 13 }}>
-          รวมชุดนี้: <strong style={{ color: '#a3e635' }}>{(Number(batch.count)*Number(batch.price)).toLocaleString('th-TH')} บาท</strong>
-        </p>
-      )}
-    </div>
-  );
-}
-
-function PlayerRow({ player, index, courtId, sessionStart, sessionEnd, totalShuttles, batches, onChange, onRemove }) {
-  const shuttles = buildShuttleList(batches);
-  const bOf = n => shuttles.find(s => s.shuttleNo === Number(n))?.batchIdx ?? 0;
-  const sb = bOf(player.shuttleStart), eb = bOf(player.shuttleEnd);
-  return (
-    <div className="slide-in card" style={{ marginBottom: 12, border: '1px solid #1f5229' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: '#a3e635', letterSpacing: 2 }}>
-          #{String(index+1).padStart(2,'0')}
-        </span>
-        <button className="btn-red" onClick={() => onRemove(courtId, player.id)}>✕ ลบ</button>
-      </div>
-      <div className="gp" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+      <div className="gp" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
         <div className="pn">
           <label className="lbl">ชื่อผู้เล่น</label>
           <input type="text" className="inp" placeholder="ชื่อ..."
-            autoCapitalize="words" autoCorrect="off" autoComplete="name"
-            value={player.name} onChange={e => onChange(courtId, player.id, 'name', e.target.value)} />
+            autoCapitalize="words" autoCorrect="off"
+            value={player.name} onChange={e=>onChange(player.id,'name',e.target.value)} />
         </div>
         <div>
           <label className="lbl">เวลาเริ่ม</label>
           <input type="time" className="inp"
-            value={player.startTime} onChange={e => onChange(courtId, player.id, 'startTime', e.target.value)} />
+            value={player.startTime} onChange={e=>onChange(player.id,'startTime',e.target.value)} />
         </div>
         <div>
           <label className="lbl">เวลาหยุด</label>
           <input type="time" className="inp"
-            value={player.endTime} onChange={e => onChange(courtId, player.id, 'endTime', e.target.value)} />
+            value={player.endTime} onChange={e=>onChange(player.id,'endTime',e.target.value)} />
         </div>
         <div>
           <label className="lbl">ลูกที่เริ่มใช้</label>
-          <input type="number" inputMode="numeric" className="inp" min={1} max={totalShuttles || 99}
-            value={player.shuttleStart} onChange={e => onChange(courtId, player.id, 'shuttleStart', Number(e.target.value))} />
-          {totalShuttles > 0 && (
-            <span className={`batch-tag ${bCls(sb)}`} style={{ marginTop: 5 }}>{bIco(sb)} ชุด {sb+1}</span>
-          )}
+          <input type="number" inputMode="numeric" className="inp" min={1} max={totalShuttles||99}
+            value={player.shuttleStart} onChange={e=>onChange(player.id,'shuttleStart',Number(e.target.value))} />
+          {totalShuttles>0&&<span className={`batch-tag ${bCls(sb)}`} style={{marginTop:5}}>{bIco(sb)} ชุด {sb+1}</span>}
         </div>
         <div>
           <label className="lbl">ลูกสุดท้าย</label>
-          <input type="number" inputMode="numeric" className="inp" min={1} max={totalShuttles || 99}
-            value={player.shuttleEnd} onChange={e => onChange(courtId, player.id, 'shuttleEnd', Number(e.target.value))} />
-          {totalShuttles > 0 && (
-            <span className={`batch-tag ${bCls(eb)}`} style={{ marginTop: 5 }}>{bIco(eb)} ชุด {eb+1}</span>
-          )}
+          <input type="number" inputMode="numeric" className="inp" min={1} max={totalShuttles||99}
+            value={player.shuttleEnd} onChange={e=>onChange(player.id,'shuttleEnd',Number(e.target.value))} />
+          {totalShuttles>0&&<span className={`batch-tag ${bCls(eb)}`} style={{marginTop:5}}>{bIco(eb)} ชุด {eb+1}</span>}
         </div>
       </div>
     </div>
   );
 }
 
-function CourtCard({ court, courtIndex, courtCount, batches, totalShuttles, onUpdateCourt, onUpdatePlayer, onRemovePlayer, onAddPlayer, onRemoveCourt }) {
-  const ci = courtIndex % 5;
-  return (
-    <div className={`card court-card-${ci} slide-in`} style={{ marginBottom: 0 }}>
-      {/* Court Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className={`court-badge-${ci}`} style={{ fontFamily: 'Bebas Neue', fontSize: 13, padding: '3px 12px', borderRadius: 99, letterSpacing: 2 }}>
-            COURT {courtIndex + 1}
-          </span>
-          <input
-            className="inp-courtname"
-            value={court.name}
-            placeholder="ชื่อสนาม"
-            onChange={e => onUpdateCourt(court.id, 'name', e.target.value)}
-          />
-        </div>
-        {courtCount > 1 && (
-          <button className="btn-red" onClick={() => onRemoveCourt(court.id)}>✕ ลบสนาม</button>
-        )}
-      </div>
-
-      {/* Court Settings */}
-      <div className="g3" style={{ marginBottom: 18, paddingBottom: 18, borderBottom: '1px solid #173d21' }}>
-        <div className="span2">
-          <label className="lbl">ค่าสนาม (บาท/ชม.)</label>
-          <input type="number" inputMode="numeric" className="inp" min={0}
-            value={court.courtPricePerHour} onChange={e => onUpdateCourt(court.id, 'courtPricePerHour', e.target.value)} />
-        </div>
-        <div>
-          <label className="lbl">เวลาเริ่มเล่น</label>
-          <input type="time" className="inp"
-            value={court.sessionStart} onChange={e => onUpdateCourt(court.id, 'sessionStart', e.target.value)} />
-        </div>
-        <div>
-          <label className="lbl">เวลาสิ้นสุด</label>
-          <input type="time" className="inp"
-            value={court.sessionEnd} onChange={e => onUpdateCourt(court.id, 'sessionEnd', e.target.value)} />
-        </div>
-      </div>
-
-      {/* Players Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <h3 className={`court-title-${ci}`} style={{ fontFamily: 'Bebas Neue', fontSize: 20, letterSpacing: 3, margin: 0 }}>
-          PLAYERS <span style={{ color: '#166534', fontSize: 16 }}>({court.players.length})</span>
-        </h3>
-        <button className="btn-lime" onClick={() => onAddPlayer(court.id)}>+ เพิ่มผู้เล่น</button>
-      </div>
-
-      {court.players.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: '28px 20px', borderStyle: 'dashed', borderColor: '#1f5229', color: '#166534' }}>
-          <p style={{ fontSize: 28, marginBottom: 6 }}>👤</p>
-          <p style={{ fontWeight: 600, fontSize: 14 }}>ยังไม่มีผู้เล่น กด "เพิ่มผู้เล่น" เพื่อเริ่ม</p>
-        </div>
-      )}
-
-      {court.players.map((p, i) => (
-        <PlayerRow
-          key={p.id} player={p} index={i}
-          courtId={court.id}
-          sessionStart={court.sessionStart} sessionEnd={court.sessionEnd}
-          totalShuttles={totalShuttles} batches={batches}
-          onChange={onUpdatePlayer} onRemove={onRemovePlayer}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ResultsTable({ data, round, courts, batches }) {
-  if (!data) return null;
-  const { courtResults, allResults, totalCourt, totalShuttle, grandTotal, shuttles } = data;
-  const multiBatch = batches.length > 1;
+function ResultsTable({data,round,courts,batches}) {
+  if(!data) return null;
+  const{results,totalCourt,totalShuttle,grandTotal}=data;
+  const multiBatch=batches.length>1;
+  const shuttles=buildShuttleList(batches);
   return (
     <div className="fade-in">
-      <div className="g3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
-        {[
-          { lbl: 'ค่าสนามรวม', v: totalCourt,   accent: false },
-          { lbl: 'ค่าลูกรวม',  v: totalShuttle, accent: false },
-          { lbl: 'รวมทั้งหมด', v: grandTotal,   accent: true  },
-        ].map(c => (
-          <div key={c.lbl} className="card" style={{ textAlign: 'center', padding: '14px 8px', border: c.accent ? '1px solid rgba(163,230,53,.45)' : '1px solid #1f5229', ...(c.accent ? { boxShadow: '0 0 18px rgba(163,230,53,.12)' } : {}) }}>
-            <p style={{ color: c.accent ? '#a3e635' : '#4ade80', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 4 }}>{c.lbl}</p>
-            <p style={{ color: c.accent ? '#a3e635' : 'white', fontFamily: 'Bebas Neue', fontSize: 24, lineHeight: 1 }}>{fmt(c.v, round)}</p>
-            <p style={{ color: c.accent ? '#65a30d' : '#166534', fontSize: 11, marginTop: 2 }}>บาท</p>
+      <div className="g3" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:18}}>
+        {[{lbl:'ค่าสนามรวม',v:totalCourt,a:false},{lbl:'ค่าลูกรวม',v:totalShuttle,a:false},{lbl:'รวมทั้งหมด',v:grandTotal,a:true}].map(c=>(
+          <div key={c.lbl} className="card" style={{textAlign:'center',padding:'12px 8px',
+            border:c.a?'1px solid rgba(163,230,53,.45)':'1px solid #1f5229',
+            ...(c.a?{boxShadow:'0 0 18px rgba(163,230,53,.12)'}:{})}}>
+            <p style={{color:c.a?'#a3e635':'#4ade80',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>{c.lbl}</p>
+            <p style={{color:c.a?'#a3e635':'white',fontFamily:'Bebas Neue',fontSize:24,lineHeight:1}}>{fmt(c.v,round)}</p>
+            <p style={{color:c.a?'#65a30d':'#166534',fontSize:11,marginTop:2}}>บาท</p>
           </div>
         ))}
       </div>
-
-      {/* Info tags */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 14 }}>
-        {courts.map(c => (
-          <span key={c.id} style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>
-            🏟️ {c.name}: {c.sessionStart}–{c.sessionEnd} · {c.courtPricePerHour}฿/ชม.
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+        {courts.map(c=>(
+          <span key={c.id} style={{background:'#0f2a17',border:'1px solid #1f5229',color:'#86efac',borderRadius:99,padding:'4px 11px',fontSize:12}}>
+            🏟️ {c.name} · {c.price}฿/ชม. · {c.startTime}–{c.endTime}
           </span>
         ))}
-        <span style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>
-          🏸 {data.totalShuttlesUsed} ลูก รวม ฿{fmt(totalShuttle, round)}
+        <span style={{background:'rgba(163,230,53,.08)',border:'1px solid rgba(163,230,53,.3)',color:'#a3e635',borderRadius:99,padding:'4px 11px',fontSize:12,fontWeight:700}}>
+          🏸 {data.totalShuttlesUsed} ลูก · ฿{fmt(totalShuttle,round)}
         </span>
       </div>
-
-      {/* ตารางแยกต่อ court */}
-      {courtResults.map(cr => (
-        <div key={cr.courtId} style={{ marginBottom: 18 }}>
-          <p style={{ color: '#4ade80', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
-            🏟️ {cr.courtName}
-          </p>
-          <div className="scroll-x" style={{ borderRadius: 12, border: '1px solid #173d21' }}>
-            <table className="rtable">
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left' }}>ชื่อ</th>
-                  <th>เวลา</th><th>ลูก</th><th>ค่าสนาม</th>
-                  {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <th key={b.id}>{bIco(i)}ชุด{i+1}<br/><span style={{fontSize:9}}>{mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo}</span></th>; }) : <th>ค่าลูก</th>}
-                  <th style={{ color: '#a3e635' }}>รวม</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cr.results.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.name}</td>
-                    <td style={{ fontSize: 11, color: '#86efac' }}>{r.startTime}–{r.endTime}</td>
-                    <td style={{ fontSize: 11, color: '#86efac' }}>{r.shuttleStart}–{r.shuttleEnd}</td>
-                    <td>{fmt(r.courtCost, round)}</td>
-                    {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(r.batchCosts[i]||0,round)}</td>; }) : <td>{fmt(r.shuttleCost,round)}</td>}
-                    <td className="lime-col">฿{fmt(r.total, round)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {multiBatch&&(
+        <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+          {batches.map((b,i)=>{
+            const mine=shuttles.filter(s=>s.batchIdx===i);
+            if(!mine.length) return null;
+            const bT=results.reduce((s,r)=>s+(r.batchCosts[i]||0),0);
+            return(
+              <span key={b.id} className={`batch-tag ${bCls(i)}`} style={{fontSize:12,padding:'5px 11px'}}>
+                {bIco(i)} ชุด{i+1} (ลูก {mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo} · {b.price}฿) → ฿{fmt(bT,round)}
+              </span>
+            );
+          })}
         </div>
-      ))}
-
-      {/* Grand Total */}
-      <div className="scroll-x" style={{ borderRadius: 12, border: '1px solid rgba(163,230,53,.3)', boxShadow: '0 0 16px rgba(163,230,53,.1)' }}>
+      )}
+      <div className="scroll-x" style={{borderRadius:12,border:'1px solid #173d21'}}>
         <table className="rtable">
+          <thead>
+            <tr>
+              <th style={{textAlign:'left'}}>ชื่อ</th>
+              <th>เวลา</th><th>ลูก</th><th>ค่าสนาม</th>
+              {multiBatch?batches.map((b,i)=>{const m=shuttles.filter(s=>s.batchIdx===i);if(!m.length)return null;return<th key={b.id}>{bIco(i)}ชุด{i+1}<br/><span style={{fontSize:9}}>{m[0].shuttleNo}–{m[m.length-1].shuttleNo}</span></th>;}): <th>ค่าลูก</th>}
+              <th style={{color:'#a3e635'}}>รวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map(r=>(
+              <tr key={r.id}>
+                <td>{r.name}</td>
+                <td style={{fontSize:11,color:'#86efac'}}>{r.startTime}–{r.endTime}</td>
+                <td style={{fontSize:11,color:'#86efac'}}>{r.shuttleStart}–{r.shuttleEnd}</td>
+                <td>{fmt(r.courtCost,round)}</td>
+                {multiBatch?batches.map((b,i)=>{const m=shuttles.filter(s=>s.batchIdx===i);if(!m.length)return null;return<td key={b.id}>{fmt(r.batchCosts[i]||0,round)}</td>;}): <td>{fmt(r.shuttleCost,round)}</td>}
+                <td className="lime-col">฿{fmt(r.total,round)}</td>
+              </tr>
+            ))}
+          </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} style={{ textAlign: 'left', color: '#4ade80', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                รวมทั้งหมด ({courts.length} สนาม)
-              </td>
-              <td>{fmt(totalCourt, round)}</td>
-              {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(allResults.reduce((s,r)=>s+(r.batchCosts[i]||0),0),round)}</td>; }) : <td>{fmt(totalShuttle,round)}</td>}
-              <td className="lime-col" style={{ fontSize: 15 }}>฿{fmt(grandTotal, round)}</td>
+              <td colSpan={3} style={{textAlign:'left',color:'#4ade80',fontSize:10,textTransform:'uppercase',letterSpacing:'.06em'}}>รวมทั้งหมด</td>
+              <td>{fmt(totalCourt,round)}</td>
+              {multiBatch?batches.map((b,i)=>{const m=shuttles.filter(s=>s.batchIdx===i);if(!m.length)return null;return<td key={b.id}>{fmt(results.reduce((s,r)=>s+(r.batchCosts[i]||0),0),round)}</td>;}): <td>{fmt(totalShuttle,round)}</td>}
+              <td className="lime-col" style={{fontSize:15}}>฿{fmt(grandTotal,round)}</td>
             </tr>
           </tfoot>
         </table>
@@ -692,278 +585,250 @@ function ResultsTable({ data, round, courts, batches }) {
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════════
    MAIN APP
-═══════════════════════════════════════════ */
+══════════════════════════════════════════ */
 function App() {
-  // ── Load saved state or use defaults ──
-  const saved = useMemo(() => loadFromStorage(), []);
+  const saved=useMemo(()=>loadSaved(),[]);
 
-  const [courts,  setCourts]  = useState(() => saved?.courts  || DEFAULT_COURTS);
-  const [batches, setBatches] = useState(() => saved?.batches || DEFAULT_BATCHES);
-  const [round,   setRound]   = useState(saved?.round || false);
-  const [loading,    setLoading]    = useState(false);
-  const [saveStatus, setSaveStatus] = useState('saved');
-  const [toast,      setToast]      = useState(null);
-  const resultRef = useRef(null);
-  const saveTimer = useRef(null);
+  // migrate: ถ้า saved มี courts แต่ไม่มี startTime ให้เพิ่มให้อัตโนมัติ
+  const initCourts=useMemo(()=>{
+    if(!saved) return DEFAULT_COURTS;
+    const c=saved.courts||DEFAULT_COURTS;
+    return c.map(ct=>({...ct,
+      startTime:ct.startTime||saved.settings?.sessionStart||'18:00',
+      endTime:  ct.endTime  ||saved.settings?.sessionEnd  ||'21:00',
+    }));
+  },[]);
 
-  // ── Auto-save (debounced 600ms) ──
-  useEffect(() => {
+  const [courts,  setCourts]  = useState(initCourts);
+  const [batches, setBatches] = useState(saved?.batches ||DEFAULT_BATCHES);
+  const [players, setPlayers] = useState(saved?.players ||DEFAULT_PLAYERS);
+  const [round,   setRound]   = useState(saved?.round   ||false);
+  const [errors,  setErrors]  = useState([]);
+  const [result,  setResult]  = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saveStatus,setSaveStatus] = useState('saved');
+  const [toast,   setToast]   = useState(null);
+  const resultRef=useRef(null);
+  const saveTimer=useRef(null);
+
+  useEffect(()=>{
     setSaveStatus('saving');
     clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveToStorage({ courts, batches, round });
-      setSaveStatus('saved');
-    }, 600);
-    return () => clearTimeout(saveTimer.current);
-  }, [courts, batches, round]);
+    saveTimer.current=setTimeout(()=>{ saveTo({courts,batches,players,round}); setSaveStatus('saved'); },600);
+    return()=>clearTimeout(saveTimer.current);
+  },[courts,batches,players,round]);
 
-  // ── Derived (ไม่ต้องใช้ useEffect) ──
-  const errors = validate(courts, batches);
-  const result = errors.length === 0 ? calculate(courts, batches) : null;
+  useEffect(()=>{
+    const errs=validate(courts,players,batches);
+    setErrors(errs);
+    setResult(errs.length===0&&players.length>0?calculate(courts,players,batches):null);
+  },[courts,players,batches]);
 
-  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); }, []);
+  const showToast=useCallback(msg=>{setToast(msg);setTimeout(()=>setToast(null),2500);},[]);
+  const updC=useCallback((id,k,v)=>setCourts(p=>p.map(c=>c.id===id?{...c,[k]:v}:c)),[]);
+  const updB=useCallback((id,k,v)=>setBatches(p=>p.map(b=>b.id===id?{...b,[k]:v}:b)),[]);
+  const updP=useCallback((id,k,v)=>setPlayers(p=>p.map(pl=>pl.id===id?{...pl,[k]:v}:pl)),[]);
 
-  const batchNums = useMemo(() => {
-    let num = 1;
-    return batches.map(b => { const s=num, cnt=Math.max(0,Number(b.count)||0); num+=cnt; return { start:s, end:s+cnt-1 }; });
-  }, [batches]);
-  const totalShuttles = useMemo(() => buildShuttleList(batches).length, [batches]);
+  const batchNums=useMemo(()=>{
+    let num=1;
+    return batches.map(b=>{const s=num,cnt=Math.max(0,Number(b.count)||0);num+=cnt;return{start:s,end:s+cnt-1};});
+  },[batches]);
 
-  // ── Court handlers ──
-  const addCourt    = () => setCourts(p => [...p, makeCourt(p.length)]);
-  const removeCourt = (courtId) => setCourts(p => p.filter(c => c.id !== courtId));
-  const updateCourt = useCallback((courtId, field, value) => {
-    setCourts(p => p.map(c => c.id === courtId ? { ...c, [field]: value } : c));
-  }, []);
+  const totalShuttles=useMemo(()=>buildShuttleList(batches).length,[batches]);
 
-  // ── Player handlers ──
-  const addPlayer = (courtId) => {
-    setCourts(p => p.map(c => c.id === courtId
-      ? { ...c, players: [...c.players, makePlayer(c.sessionStart)] }
-      : c
-    ));
-  };
-  const removePlayer = useCallback((courtId, playerId) => {
-    setCourts(p => p.map(c => c.id === courtId
-      ? { ...c, players: c.players.filter(pl => pl.id !== playerId) }
-      : c
-    ));
-  }, []);
-  const updatePlayer = useCallback((courtId, playerId, field, value) => {
-    setCourts(p => p.map(c => c.id === courtId
-      ? { ...c, players: c.players.map(pl => pl.id === playerId ? { ...pl, [field]: value } : pl) }
-      : c
-    ));
-  }, []);
-
-  // ── Batch handlers ──
-  const updB = useCallback((id, k, v) => setBatches(p => p.map(b => b.id===id ? { ...b, [k]: v } : b)), []);
-
-  const loadExample = () => {
-    const ex = makeExample();
-    setCourts(ex.courts); setBatches(ex.batches);
-    showToast('โหลดข้อมูลตัวอย่างแล้ว ✅');
-  };
-
-  const clearAll = () => {
-    if (!window.confirm('ล้างข้อมูลทั้งหมด?\n(ข้อมูลที่บันทึกไว้จะถูกลบออกด้วย)')) return;
-    localStorage.removeItem('badminton_split_v2');
-    setCourts([makeCourt(0)]); setBatches([makeBatch()]); setRound(false);
+  const loadExample=()=>{const ex=makeExample();setCourts(ex.courts);setBatches(ex.batches);setPlayers(ex.players);showToast('โหลดข้อมูลตัวอย่างแล้ว ✅');};
+  const clearAll=()=>{
+    if(!window.confirm('ล้างข้อมูลทั้งหมด?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    setCourts(DEFAULT_COURTS);setBatches([makeBatch()]);setPlayers([makePlayer()]);
     showToast('ล้างข้อมูลแล้ว 🗑️');
   };
 
-  const handleExport = async () => {
-    if (!resultRef.current) return;
+  const handleExport=async()=>{
+    if(!resultRef.current) return;
     setLoading(true);
-    try {
-      await new Promise(r => setTimeout(r, 80));
-      const canvas = await exportSharpImage(resultRef.current);
-      const link = document.createElement('a');
-      link.download = `badminton-split-${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+    try{
+      await new Promise(r=>setTimeout(r,80));
+      const canvas=await exportSharpImage(resultRef.current);
+      const link=document.createElement('a');
+      link.download=`badminton-split-${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.png`;
+      link.href=canvas.toDataURL('image/png',1.0);link.click();
       showToast('Export สำเร็จ! 📸');
-    } catch (e) { alert('Export ล้มเหลว: ' + e.message); }
-    finally { setLoading(false); }
+    }catch(e){alert('Export ล้มเหลว: '+e.message);}
+    finally{setLoading(false);}
   };
 
-  const copyText = async () => {
-    if (!result) return;
-    const { courtResults, totalCourt, totalShuttle, grandTotal } = result;
-    const lines = [`🏸 Badminton Split — ${courts.length} สนาม`, '─'.repeat(44)];
-    courtResults.forEach(cr => {
-      lines.push(`🏟️ ${cr.courtName}`);
-      cr.results.forEach(r =>
-        lines.push(`  ${r.name.padEnd(6)} สนาม:${fmt(r.courtCost,round).padStart(8)} | ลูก:${fmt(r.shuttleCost,round).padStart(8)} | รวม: ฿${fmt(r.total,round)}`)
-      );
-    });
-    lines.push('─'.repeat(44));
-    lines.push(`ค่าสนามรวม : ฿${fmt(totalCourt,round)}`);
-    lines.push(`ค่าลูกรวม  : ฿${fmt(totalShuttle,round)}`);
-    lines.push(`รวมทั้งหมด : ฿${fmt(grandTotal,round)}`);
-    try { await navigator.clipboard.writeText(lines.join('\n')); showToast('คัดลอกแล้ว! 📋'); }
-    catch { alert('ไม่สามารถคัดลอกได้ กรุณาใช้ Export รูปแทนครับ'); }
+  const copyText=async()=>{
+    if(!result) return;
+    const{results,totalCourt,totalShuttle,grandTotal}=result;
+    const courtList=courts.map(c=>`${c.name} ${c.price}฿/ชม. (${c.startTime}–${c.endTime})`).join(', ');
+    const lines=[`🏸 Badminton Split`,`🏟️ ${courtList}`,'─'.repeat(44),
+      ...results.map(r=>`${r.name.padEnd(6)} สนาม:${fmt(r.courtCost,round).padStart(8)} | ลูก:${fmt(r.shuttleCost,round).padStart(8)} | รวม: ฿${fmt(r.total,round)}`),
+      '─'.repeat(44),`ค่าสนามรวม : ฿${fmt(totalCourt,round)}`,`ค่าลูกรวม  : ฿${fmt(totalShuttle,round)}`,`รวมทั้งหมด : ฿${fmt(grandTotal,round)}`,
+    ];
+    try{await navigator.clipboard.writeText(lines.join('\n'));showToast('คัดลอกแล้ว! 📋');}
+    catch{alert('ไม่สามารถคัดลอกได้');}
   };
 
-  const H2 = { fontFamily: 'Bebas Neue', fontSize: 26, color: '#a3e635', letterSpacing: 4, margin: 0 };
+  const H2={fontFamily:'Bebas Neue',fontSize:26,color:'#a3e635',letterSpacing:4,margin:0};
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a1a0f' }}>
+    <div style={{minHeight:'100vh',background:'#0a1a0f'}}>
+      {loading&&<div className="overlay"><div className="spinner"/><p style={{color:'#a3e635',fontFamily:'Bebas Neue',fontSize:22,letterSpacing:3}}>กำลัง Export...</p></div>}
+      {toast&&<div className="toast">{toast}</div>}
 
-      {loading && (
-        <div className="overlay">
-          <div className="spinner" />
-          <p style={{ color: '#a3e635', fontFamily: 'Bebas Neue', fontSize: 22, letterSpacing: 3 }}>กำลัง Export...</p>
-          <p style={{ color: '#4ade80', fontSize: 13 }}>กรุณารอสักครู่ กำลังเรนเดอร์ภาพ</p>
+      <header className="safe-top" style={{position:'relative',overflow:'hidden',background:'#050e07',borderBottom:'1px solid #173d21',padding:'20px 16px'}}>
+        <div style={{position:'absolute',inset:0,opacity:.05,pointerEvents:'none'}}>
+          <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:1,height:'100%',background:'#a3e635'}}/>
+          <div style={{position:'absolute',top:'50%',left:0,width:'100%',height:1,background:'#a3e635'}}/>
         </div>
-      )}
-
-      {toast && <div className="toast">{toast}</div>}
-
-      {/* HEADER */}
-      <header className="safe-top" style={{ position: 'relative', overflow: 'hidden', background: '#050e07', borderBottom: '1px solid #173d21', padding: '22px 16px' }}>
-        <div style={{ position: 'absolute', inset: 0, opacity: .05, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 1, height: '100%', background: '#a3e635' }} />
-          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 1, background: '#a3e635' }} />
-        </div>
-        <div style={{ maxWidth: 820, margin: '0 auto', position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{maxWidth:820,margin:'0 auto',position:'relative'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <div>
-              <h1 style={{ fontFamily: 'Bebas Neue', fontSize: 'clamp(28px,8vw,50px)', color: 'white', letterSpacing: 6, lineHeight: 1, margin: 0 }}>
-                BADMINTON<span style={{ color: '#a3e635' }}>.</span>SPLIT
+              <h1 style={{fontFamily:'Bebas Neue',fontSize:'clamp(28px,8vw,50px)',color:'white',letterSpacing:6,lineHeight:1,margin:0}}>
+                BADMINTON<span style={{color:'#a3e635'}}>.</span>SPLIT
               </h1>
-              <p style={{ color: '#22c55e', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
-                คำนวณค่าใช้จ่ายยุติธรรม · รองรับลูกหลายชุด-หลายราคา
-              </p>
+              <p style={{color:'#22c55e',fontSize:13,marginTop:4,fontWeight:500}}>คำนวณค่าใช้จ่ายยุติธรรม · รองรับหลายสนาม-หลายเวลา</p>
             </div>
-            <span style={{ fontSize: 42, opacity: .85 }}>🏸</span>
+            <span style={{fontSize:40,opacity:.85}}>🏸</span>
           </div>
-
-          {/* ── Save status bar ── */}
-          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className={`save-dot ${saveStatus === 'saving' ? 'saving' : ''}`}>
-              <span className="dot" />
-              {saveStatus === 'saving' ? 'กำลังบันทึก...' : 'บันทึกอัตโนมัติแล้ว'}
+          <div style={{marginTop:10}}>
+            <span className={`save-dot ${saveStatus==='saving'?'saving':''}`}>
+              <span className="dot"/>
+              {saveStatus==='saving'?'กำลังบันทึก...':'บันทึกอัตโนมัติแล้ว'}
             </span>
-            {saved && (
-              <span style={{ fontSize: 11, color: '#1f5229' }}>
-                · ข้อมูลจะอยู่แม้ปิด browser
-              </span>
-            )}
           </div>
         </div>
       </header>
 
-      <main className="safe-bottom" style={{ maxWidth: 820, margin: '0 auto', padding: '20px 16px' }}>
-
-        {/* Quick actions */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+      <main className="safe-bottom" style={{maxWidth:820,margin:'0 auto',padding:'18px 16px'}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:18}}>
           <button className="btn-ghost" onClick={loadExample}>🧪 โหลดตัวอย่าง</button>
           <button className="btn-ghost" onClick={clearAll}>🗑️ ล้างข้อมูล</button>
         </div>
 
-        {/* ── SHUTTLECOCK ── */}
-        <section className="card" style={{ marginBottom: 14, border: '1px solid #1f5229' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 10 }}>
+        {/* COURTS */}
+        <section className="card" style={{marginBottom:14,border:'1px solid #1f5229'}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14,gap:10}}>
+            <div>
+              <h2 style={H2}>COURTS <span style={{color:'#166534',fontSize:20}}>({courts.length})</span></h2>
+              <p style={{color:'#4ade80',fontSize:12,marginTop:4}}>แต่ละสนามมีเวลาเริ่ม-สิ้นสุดของตัวเอง · คิดตามช่วงที่สนามเปิด</p>
+            </div>
+            <button className="btn-lime" onClick={()=>setCourts(p=>[...p,makeCourt()])}>+ เพิ่มสนาม</button>
+          </div>
+          {courts.length===0?(
+            <div style={{textAlign:'center',padding:'24px',border:'1px dashed #1f5229',borderRadius:10,color:'#166534'}}>
+              <p style={{fontSize:28,marginBottom:6}}>🏟️</p>
+              <p style={{fontWeight:600,fontSize:13}}>ยังไม่มีสนาม กด "เพิ่มสนาม" เพื่อเริ่ม</p>
+            </div>
+          ):(
+            courts.map((c,i)=>(
+              <CourtRow key={c.id} court={c} index={i}
+                onChange={updC} onRemove={id=>setCourts(p=>p.filter(x=>x.id!==id))}
+                canRemove={courts.length>1}/>
+            ))
+          )}
+        </section>
+
+        {/* SHUTTLECOCK */}
+        <section className="card" style={{marginBottom:14,border:'1px solid #1f5229'}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14,gap:10}}>
             <div>
               <h2 style={H2}>SHUTTLECOCK</h2>
-              <p style={{ color: '#4ade80', fontSize: 12, marginTop: 4 }}>ใช้ร่วมกันทุกสนาม · เพิ่มหลายชุดได้ · ราคาต่างกันได้ · ลูกนับต่อเนื่อง</p>
+              <p style={{color:'#4ade80',fontSize:12,marginTop:4}}>เพิ่มหลายชุดได้ · ราคาต่างกันได้</p>
             </div>
-            <button className="btn-lime" onClick={() => setBatches(p => [...p, makeBatch()])}>+ เพิ่มชุดลูก</button>
+            <button className="btn-lime" onClick={()=>setBatches(p=>[...p,makeBatch()])}>+ เพิ่มชุดลูก</button>
           </div>
-          {batches.map((b, i) => (
+          {batches.map((b,i)=>(
             <BatchRow key={b.id} batch={b} index={i}
               startNum={batchNums[i].start} endNum={batchNums[i].end}
-              onChange={updB} onRemove={id => setBatches(p => p.filter(x => x.id !== id))}
-              canRemove={batches.length > 1} />
+              onChange={updB} onRemove={id=>setBatches(p=>p.filter(x=>x.id!==id))}
+              canRemove={batches.length>1}/>
           ))}
-          <ShuttleMap batches={batches} />
-          {totalShuttles > 0 && (
-            <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(163,230,53,.06)', border: '1px solid rgba(163,230,53,.2)', borderRadius: 8 }}>
-              <p style={{ color: '#a3e635', fontSize: 13, fontWeight: 700 }}>
-                🏸 รวมลูกทั้งหมด: {totalShuttles} ลูก &nbsp;·&nbsp;
-                ค่าลูกรวม: {batches.reduce((s,b)=>s+Number(b.count)*Number(b.price),0).toLocaleString('th-TH')} บาท
+          <ShuttleMap batches={batches}/>
+          {totalShuttles>0&&(
+            <div style={{marginTop:12,padding:'10px 14px',background:'rgba(163,230,53,.06)',border:'1px solid rgba(163,230,53,.2)',borderRadius:8}}>
+              <p style={{color:'#a3e635',fontSize:13,fontWeight:700}}>
+                🏸 รวมลูกทั้งหมด: {totalShuttles} ลูก &nbsp;·&nbsp; ค่าลูกรวม: {batches.reduce((s,b)=>s+Number(b.count)*Number(b.price),0).toLocaleString('th-TH')} บาท
               </p>
             </div>
           )}
         </section>
 
-        {/* ── COURTS ── */}
-        <section style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h2 style={H2}>COURTS <span style={{ color: '#166534', fontSize: 20 }}>({courts.length})</span></h2>
-            <button className="btn-lime" onClick={addCourt}>+ เพิ่มสนาม</button>
+        {/* PLAYERS */}
+        <section style={{marginBottom:14}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+            <h2 style={H2}>PLAYERS <span style={{color:'#166534',fontSize:20}}>({players.length})</span></h2>
+            <button className="btn-lime" onClick={()=>{
+              const gS=courts.length>0?courts.map(c=>c.startTime).sort()[0]:'18:00';
+              setPlayers(p=>[...p,makePlayer(gS)]);
+            }}>+ เพิ่มผู้เล่น</button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {courts.map((court, i) => (
-              <CourtCard
-                key={court.id} court={court} courtIndex={i} courtCount={courts.length}
-                batches={batches} totalShuttles={totalShuttles}
-                onUpdateCourt={updateCourt} onUpdatePlayer={updatePlayer}
-                onRemovePlayer={removePlayer} onAddPlayer={addPlayer}
-                onRemoveCourt={removeCourt}
-              />
-            ))}
-          </div>
+          {players.length===0&&(
+            <div className="card" style={{textAlign:'center',padding:'32px 20px',borderStyle:'dashed',borderColor:'#1f5229',color:'#166534'}}>
+              <p style={{fontSize:32,marginBottom:8}}>👤</p>
+              <p style={{fontWeight:600}}>ยังไม่มีผู้เล่น กด "เพิ่มผู้เล่น" เพื่อเริ่ม</p>
+            </div>
+          )}
+          {players.map((p,i)=>(
+            <PlayerRow key={p.id} player={p} index={i}
+              courts={courts} totalShuttles={totalShuttles} batches={batches}
+              onChange={updP} onRemove={id=>setPlayers(p=>p.filter(x=>x.id!==id))}/>
+          ))}
         </section>
 
-        {/* ── ERRORS ── */}
-        {errors.length > 0 && (
-          <div className="card" style={{ marginBottom: 14, background: 'rgba(220,38,38,.07)', border: '1px solid rgba(220,38,38,.3)' }}>
-            <p style={{ color: '#f87171', fontWeight: 700, fontSize: 14, marginBottom: 8 }}>ตรวจพบข้อผิดพลาด:</p>
-            {errors.map((e, i) => <p key={i} style={{ color: '#fca5a5', fontSize: 13, marginBottom: 4 }}>{e}</p>)}
+        {/* ERRORS */}
+        {errors.length>0&&(
+          <div className="card" style={{marginBottom:14,background:'rgba(220,38,38,.07)',border:'1px solid rgba(220,38,38,.3)'}}>
+            <p style={{color:'#f87171',fontWeight:700,fontSize:14,marginBottom:8}}>ตรวจพบข้อผิดพลาด:</p>
+            {errors.map((e,i)=><p key={i} style={{color:'#fca5a5',fontSize:13,marginBottom:4}}>{e}</p>)}
           </div>
         )}
 
-        {/* ── RESULTS ── */}
-        {result && (
+        {/* RESULTS */}
+        {result&&(
           <section>
-            <div className="action-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+            <div className="action-bar" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:12}}>
               <h2 style={H2}>RESULTS</h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button className="btn-toggle" onClick={() => setRound(r => !r)}
-                  style={{ background: round?'#a3e635':'#0f2a17', color: round?'#050e07':'#4ade80', border: round?'1px solid #a3e635':'1px solid #173d21' }}>
-                  {round ? '✓ ปัดเศษ' : '⊙ ปัดเศษ'}
+              <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                <button className="btn-toggle" onClick={()=>setRound(r=>!r)}
+                  style={{background:round?'#a3e635':'#0f2a17',color:round?'#050e07':'#4ade80',border:round?'1px solid #a3e635':'1px solid #173d21'}}>
+                  {round?'✓ ปัดเศษ':'⊙ ปัดเศษ'}
                 </button>
                 <button className="btn-ghost" onClick={copyText}>📋 คัดลอก</button>
-                <button className="btn-ghost" onClick={handleExport} style={{ background: '#132a13', borderColor: '#1f5229' }}>📸 Export</button>
+                <button className="btn-ghost" onClick={handleExport} style={{background:'#132a13',borderColor:'#1f5229'}}>📸 Export</button>
               </div>
             </div>
-            <div ref={resultRef} className="card export-snapshot" style={{ border: '1px solid #1f5229', padding: '18px 18px 22px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid #173d21' }}>
+            <div ref={resultRef} className="card export-snapshot" style={{border:'1px solid #1f5229',padding:'18px 18px 22px'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18,paddingBottom:14,borderBottom:'1px solid #173d21'}}>
                 <div>
-                  <p style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: 'white', letterSpacing: 4, margin: 0 }}>
-                    BADMINTON<span style={{ color: '#a3e635' }}>.</span>SPLIT
-                  </p>
-                  <p style={{ color: '#4ade80', fontSize: 12, margin: '2px 0 0' }}>
-                    สรุปค่าใช้จ่าย — {new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' })}
-                  </p>
+                  <p style={{fontFamily:'Bebas Neue',fontSize:22,color:'white',letterSpacing:4,margin:0}}>BADMINTON<span style={{color:'#a3e635'}}>.</span>SPLIT</p>
+                  <p style={{color:'#4ade80',fontSize:12,margin:'2px 0 0'}}>สรุปค่าใช้จ่าย — {new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</p>
                 </div>
-                <span style={{ fontSize: 28 }}>🏸</span>
+                <span style={{fontSize:28}}>🏸</span>
               </div>
-              <ResultsTable data={result} round={round} courts={courts} batches={batches} />
+              <ResultsTable data={result} round={round} courts={courts} batches={batches}/>
             </div>
           </section>
         )}
 
-        {!result && errors.length === 0 && courts.every(c => c.players.length > 0) && (
-          <div className="card" style={{ textAlign: 'center', padding: '28px', borderStyle: 'dashed', borderColor: '#1f5229', color: '#166534' }}>
-            <p style={{ fontSize: 14 }}>กรอกข้อมูลให้ครบเพื่อดูผลลัพธ์อัตโนมัติ ✨</p>
+        {!result&&errors.length===0&&players.length>0&&(
+          <div className="card" style={{textAlign:'center',padding:'28px',borderStyle:'dashed',borderColor:'#1f5229',color:'#166534'}}>
+            <p style={{fontSize:14}}>กรอกข้อมูลให้ครบเพื่อดูผลลัพธ์อัตโนมัติ ✨</p>
           </div>
         )}
-
       </main>
 
-      <footer style={{ maxWidth: 820, margin: '24px auto 0', padding: '0 16px 32px', textAlign: 'center', color: '#1f5229', fontSize: 12 }}>
+      <footer style={{maxWidth:820,margin:'24px auto 0',padding:'0 16px 32px',textAlign:'center',color:'#1f5229',fontSize:12}}>
         คำนวณตามเวลาจริงและลูกแบดที่ใช้จริง · ยุติธรรมกับทุกคน 🏸
       </footer>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
