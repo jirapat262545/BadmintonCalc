@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useReducer, useRef, useCallback } from 'react'
 import html2canvas from 'html2canvas'
 
 // ─────────────────────────────────────────────
@@ -14,129 +14,6 @@ const fmt = (n, round) =>
   round ? Math.round(n).toLocaleString() : n.toFixed(2).replace(/\.?0+$/, '')
 
 const uid = () => Math.random().toString(36).slice(2, 9)
-
-// ─────────────────────────────────────────────
-// CALCULATION ENGINE (Multi-Court)
-// ─────────────────────────────────────────────
-/**
- * courts: [{ id, name, courtPricePerHour, sessionStart, sessionEnd, players: [...] }]
- * shuttle: { shuttleCount, shuttlePrice }
- *
- * ค่าสนาม: คำนวณแยกต่อ court (ราคา/เวลาต่างกันได้)
- * ค่าลูก:  pool รวมทุก court หารตาม shuttleStart–End
- */
-function calculate(courts, shuttle) {
-  const { shuttleCount, shuttlePrice } = shuttle
-  const allPlayers = courts.flatMap((c) => c.players.map((p) => ({ ...p, courtId: c.id })))
-
-  if (allPlayers.length === 0) return null
-
-  // ── Court cost: per court ──
-  const courtCosts = {}
-  allPlayers.forEach((p) => (courtCosts[p.id] = 0))
-
-  courts.forEach((court) => {
-    const startMin = timeToMinutes(court.sessionStart)
-    const endMin = timeToMinutes(court.sessionEnd)
-    if (endMin <= startMin || court.players.length === 0) return
-
-    const slots = []
-    for (let t = startMin; t < endMin; t += 60) {
-      slots.push({ start: t, end: Math.min(t + 60, endMin) })
-    }
-
-    slots.forEach((slot) => {
-      const fraction = (slot.end - slot.start) / 60
-      const inSlot = court.players.filter((p) => {
-        const ps = timeToMinutes(p.startTime)
-        const pe = timeToMinutes(p.endTime)
-        return ps < slot.end && pe > slot.start
-      })
-      if (inSlot.length === 0) return
-      const costPer = (court.courtPricePerHour * fraction) / inSlot.length
-      inSlot.forEach((p) => (courtCosts[p.id] += costPer))
-    })
-  })
-
-  // ── Shuttle cost: shared pool across all courts ──
-  const shuttleCosts = {}
-  allPlayers.forEach((p) => (shuttleCosts[p.id] = 0))
-
-  for (let s = 1; s <= shuttleCount; s++) {
-    const using = allPlayers.filter(
-      (p) => Number(p.shuttleStart) <= s && Number(p.shuttleEnd) >= s,
-    )
-    if (using.length === 0) continue
-    const costPer = shuttlePrice / using.length
-    using.forEach((p) => (shuttleCosts[p.id] += costPer))
-  }
-
-  // ── Per-court results ──
-  const courtResults = courts.map((court) => {
-    const results = court.players.map((p) => ({
-      id: p.id,
-      name: p.name,
-      startTime: p.startTime,
-      endTime: p.endTime,
-      shuttleStart: p.shuttleStart,
-      shuttleEnd: p.shuttleEnd,
-      courtCost: courtCosts[p.id] || 0,
-      shuttleCost: shuttleCosts[p.id] || 0,
-      total: (courtCosts[p.id] || 0) + (shuttleCosts[p.id] || 0),
-    }))
-    return { courtId: court.id, courtName: court.name, results }
-  })
-
-  // ── Grand totals ──
-  const allResults = courtResults.flatMap((c) => c.results)
-  const totalCourt = allResults.reduce((s, r) => s + r.courtCost, 0)
-  const totalShuttle = allResults.reduce((s, r) => s + r.shuttleCost, 0)
-  const grandTotal = totalCourt + totalShuttle
-
-  return { courtResults, totalCourt, totalShuttle, grandTotal }
-}
-
-// ─────────────────────────────────────────────
-// VALIDATION (Multi-Court)
-// ─────────────────────────────────────────────
-function validate(courts, shuttle) {
-  const errors = []
-  const { shuttleCount, shuttlePrice } = shuttle
-
-  if (shuttleCount < 1) errors.push('⚠️ จำนวนลูกแบดต้องอย่างน้อย 1 ลูก')
-  if (shuttlePrice <= 0) errors.push('⚠️ ราคาลูกแบดต้องมากกว่า 0')
-
-  courts.forEach((court, ci) => {
-    const courtLabel = court.name || `สนาม ${ci + 1}`
-    const sStart = timeToMinutes(court.sessionStart)
-    const sEnd = timeToMinutes(court.sessionEnd)
-
-    if (sEnd <= sStart)
-      errors.push(`⚠️ [${courtLabel}] เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น`)
-    if (court.courtPricePerHour <= 0)
-      errors.push(`⚠️ [${courtLabel}] ค่าสนามต้องมากกว่า 0`)
-
-    court.players.forEach((p, i) => {
-      const label = p.name || `ผู้เล่นคนที่ ${i + 1}`
-      const ps = timeToMinutes(p.startTime)
-      const pe = timeToMinutes(p.endTime)
-      if (!p.name) errors.push(`⚠️ [${courtLabel}] [${label}] กรุณากรอกชื่อ`)
-      if (pe <= ps) errors.push(`⚠️ [${courtLabel}] [${label}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`)
-      if (ps < sStart || pe > sEnd)
-        errors.push(
-          `⚠️ [${courtLabel}] [${label}] เวลาเล่นต้องอยู่ในช่วง ${court.sessionStart}–${court.sessionEnd}`,
-        )
-      if (Number(p.shuttleStart) > Number(p.shuttleEnd))
-        errors.push(`⚠️ [${courtLabel}] [${label}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`)
-      if (Number(p.shuttleEnd) > shuttleCount)
-        errors.push(
-          `⚠️ [${courtLabel}] [${label}] ลูกสุดท้ายเกินจำนวนลูกทั้งหมด (${shuttleCount})`,
-        )
-    })
-  })
-
-  return errors
-}
 
 // ─────────────────────────────────────────────
 // FACTORY FUNCTIONS
@@ -160,43 +37,237 @@ const makeCourt = (index = 0) => ({
 })
 
 // ─────────────────────────────────────────────
-// EXAMPLE DATA (Multi-Court)
+// REDUCER — single source of truth, ไม่มี stale closure
+// ─────────────────────────────────────────────
+const initialState = {
+  courts: [makeCourt(0)],
+  shuttle: { shuttleCount: 7, shuttlePrice: 80 },
+  round: false,
+  exporting: false,
+}
+
+function reducer(state, action) {
+  switch (action.type) {
+
+    case 'ADD_COURT':
+      return { ...state, courts: [...state.courts, makeCourt(state.courts.length)] }
+
+    case 'REMOVE_COURT':
+      return { ...state, courts: state.courts.filter((c) => c.id !== action.courtId) }
+
+    case 'UPDATE_COURT_FIELD':
+      return {
+        ...state,
+        courts: state.courts.map((c) =>
+          c.id === action.courtId ? { ...c, [action.field]: action.value } : c
+        ),
+      }
+
+    case 'ADD_PLAYER':
+      return {
+        ...state,
+        courts: state.courts.map((c) =>
+          c.id === action.courtId
+            ? { ...c, players: [...c.players, makePlayer(c.sessionStart)] }
+            : c
+        ),
+      }
+
+    case 'REMOVE_PLAYER':
+      return {
+        ...state,
+        courts: state.courts.map((c) =>
+          c.id === action.courtId
+            ? { ...c, players: c.players.filter((p) => p.id !== action.playerId) }
+            : c
+        ),
+      }
+
+    case 'UPDATE_PLAYER_FIELD':
+      return {
+        ...state,
+        courts: state.courts.map((c) =>
+          c.id === action.courtId
+            ? {
+                ...c,
+                players: c.players.map((p) =>
+                  p.id === action.playerId ? { ...p, [action.field]: action.value } : p
+                ),
+              }
+            : c
+        ),
+      }
+
+    case 'UPDATE_SHUTTLE':
+      return { ...state, shuttle: { ...state.shuttle, [action.field]: action.value } }
+
+    case 'TOGGLE_ROUND':
+      return { ...state, round: !state.round }
+
+    case 'SET_EXPORTING':
+      return { ...state, exporting: action.value }
+
+    case 'LOAD_EXAMPLE':
+      return { ...state, courts: action.courts, shuttle: action.shuttle }
+
+    case 'CLEAR_ALL':
+      return { ...state, courts: [makeCourt(0)], shuttle: { shuttleCount: 1, shuttlePrice: 0 } }
+
+    default:
+      return state
+  }
+}
+
+// ─────────────────────────────────────────────
+// CALCULATION ENGINE
+// ─────────────────────────────────────────────
+function calculate(courts, shuttle) {
+  const { shuttleCount, shuttlePrice } = shuttle
+  const allPlayers = courts.flatMap((c) => c.players.map((p) => ({ ...p, courtId: c.id })))
+  if (allPlayers.length === 0) return null
+
+  // ── Court cost: แยกต่อ court ──
+  const courtCosts = {}
+  allPlayers.forEach((p) => (courtCosts[p.id] = 0))
+
+  courts.forEach((court) => {
+    const startMin = timeToMinutes(court.sessionStart)
+    const endMin = timeToMinutes(court.sessionEnd)
+    if (endMin <= startMin || court.players.length === 0) return
+
+    const slots = []
+    for (let t = startMin; t < endMin; t += 60)
+      slots.push({ start: t, end: Math.min(t + 60, endMin) })
+
+    slots.forEach((slot) => {
+      const fraction = (slot.end - slot.start) / 60
+      const inSlot = court.players.filter((p) => {
+        const ps = timeToMinutes(p.startTime)
+        const pe = timeToMinutes(p.endTime)
+        return ps < slot.end && pe > slot.start
+      })
+      if (inSlot.length === 0) return
+      const costPer = (court.courtPricePerHour * fraction) / inSlot.length
+      inSlot.forEach((p) => (courtCosts[p.id] += costPer))
+    })
+  })
+
+  // ── Shuttle cost: pool รวมทุก court ──
+  const shuttleCosts = {}
+  allPlayers.forEach((p) => (shuttleCosts[p.id] = 0))
+
+  for (let s = 1; s <= shuttleCount; s++) {
+    const using = allPlayers.filter(
+      (p) => Number(p.shuttleStart) <= s && Number(p.shuttleEnd) >= s
+    )
+    if (using.length === 0) continue
+    const costPer = shuttlePrice / using.length
+    using.forEach((p) => (shuttleCosts[p.id] += costPer))
+  }
+
+  // ── Combine ──
+  const courtResults = courts.map((court) => ({
+    courtId: court.id,
+    courtName: court.name,
+    results: court.players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      startTime: p.startTime,
+      endTime: p.endTime,
+      shuttleStart: p.shuttleStart,
+      shuttleEnd: p.shuttleEnd,
+      courtCost: courtCosts[p.id] || 0,
+      shuttleCost: shuttleCosts[p.id] || 0,
+      total: (courtCosts[p.id] || 0) + (shuttleCosts[p.id] || 0),
+    })),
+  }))
+
+  const allResults = courtResults.flatMap((c) => c.results)
+  const totalCourt = allResults.reduce((s, r) => s + r.courtCost, 0)
+  const totalShuttle = allResults.reduce((s, r) => s + r.shuttleCost, 0)
+  const grandTotal = totalCourt + totalShuttle
+
+  return { courtResults, totalCourt, totalShuttle, grandTotal }
+}
+
+// ─────────────────────────────────────────────
+// VALIDATION
+// ─────────────────────────────────────────────
+function validate(courts, shuttle) {
+  const errors = []
+  const { shuttleCount, shuttlePrice } = shuttle
+
+  if (shuttleCount < 1) errors.push('⚠️ จำนวนลูกแบดต้องอย่างน้อย 1 ลูก')
+  if (shuttlePrice <= 0) errors.push('⚠️ ราคาลูกแบดต้องมากกว่า 0')
+
+  courts.forEach((court, ci) => {
+    const courtLabel = court.name || `สนาม ${ci + 1}`
+    const sStart = timeToMinutes(court.sessionStart)
+    const sEnd = timeToMinutes(court.sessionEnd)
+
+    if (sEnd <= sStart)
+      errors.push(`⚠️ [${courtLabel}] เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น`)
+    if (court.courtPricePerHour <= 0)
+      errors.push(`⚠️ [${courtLabel}] ค่าสนามต้องมากกว่า 0`)
+
+    court.players.forEach((p, i) => {
+      const label = p.name || `ผู้เล่นคนที่ ${i + 1}`
+      const ps = timeToMinutes(p.startTime)
+      const pe = timeToMinutes(p.endTime)
+      if (!p.name)
+        errors.push(`⚠️ [${courtLabel}] [${label}] กรุณากรอกชื่อ`)
+      if (pe <= ps)
+        errors.push(`⚠️ [${courtLabel}] [${label}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`)
+      if (ps < sStart || pe > sEnd)
+        errors.push(`⚠️ [${courtLabel}] [${label}] เวลาเล่นต้องอยู่ในช่วง ${court.sessionStart}–${court.sessionEnd}`)
+      if (Number(p.shuttleStart) > Number(p.shuttleEnd))
+        errors.push(`⚠️ [${courtLabel}] [${label}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`)
+      if (Number(p.shuttleEnd) > shuttleCount)
+        errors.push(`⚠️ [${courtLabel}] [${label}] ลูกสุดท้ายเกินจำนวนลูกทั้งหมด (${shuttleCount})`)
+    })
+  })
+
+  return errors
+}
+
+// ─────────────────────────────────────────────
+// EXAMPLE DATA
 // ─────────────────────────────────────────────
 const EXAMPLE_COURTS = [
   {
-    id: uid(),
+    id: 'ex1',
     name: 'สนาม A',
     courtPricePerHour: 140,
     sessionStart: '18:00',
     sessionEnd: '21:00',
     players: [
-      { id: uid(), name: 'ดิฟ', startTime: '18:00', endTime: '19:00', shuttleStart: 1, shuttleEnd: 4 },
-      { id: uid(), name: 'นาย', startTime: '18:00', endTime: '19:00', shuttleStart: 1, shuttleEnd: 4 },
-      { id: uid(), name: 'เอิท', startTime: '18:00', endTime: '21:00', shuttleStart: 2, shuttleEnd: 7 },
-      { id: uid(), name: 'ดรอย', startTime: '18:00', endTime: '21:00', shuttleStart: 1, shuttleEnd: 7 },
+      { id: 'p1', name: 'ดิฟ',   startTime: '18:00', endTime: '19:00', shuttleStart: 1, shuttleEnd: 4 },
+      { id: 'p2', name: 'นาย',   startTime: '18:00', endTime: '19:00', shuttleStart: 1, shuttleEnd: 4 },
+      { id: 'p3', name: 'เอิท',  startTime: '18:00', endTime: '21:00', shuttleStart: 2, shuttleEnd: 7 },
+      { id: 'p4', name: 'ดรอย',  startTime: '18:00', endTime: '21:00', shuttleStart: 1, shuttleEnd: 7 },
     ],
   },
   {
-    id: uid(),
+    id: 'ex2',
     name: 'สนาม B',
     courtPricePerHour: 160,
     sessionStart: '18:00',
     sessionEnd: '20:00',
     players: [
-      { id: uid(), name: 'มาชร์', startTime: '18:00', endTime: '20:00', shuttleStart: 1, shuttleEnd: 7 },
-      { id: uid(), name: 'ปริ้น', startTime: '18:00', endTime: '20:00', shuttleStart: 1, shuttleEnd: 7 },
-      { id: uid(), name: 'บิว', startTime: '18:00', endTime: '20:00', shuttleStart: 2, shuttleEnd: 7 },
-      { id: uid(), name: 'ปิ่น', startTime: '19:00', endTime: '20:00', shuttleStart: 3, shuttleEnd: 7 },
+      { id: 'p5', name: 'มาชร์', startTime: '18:00', endTime: '20:00', shuttleStart: 1, shuttleEnd: 7 },
+      { id: 'p6', name: 'ปริ้น', startTime: '18:00', endTime: '20:00', shuttleStart: 1, shuttleEnd: 7 },
+      { id: 'p7', name: 'บิว',   startTime: '18:00', endTime: '20:00', shuttleStart: 2, shuttleEnd: 7 },
+      { id: 'p8', name: 'ปิ่น',  startTime: '19:00', endTime: '20:00', shuttleStart: 3, shuttleEnd: 7 },
     ],
   },
 ]
-
 const EXAMPLE_SHUTTLE = { shuttleCount: 7, shuttlePrice: 80 }
 
 // ─────────────────────────────────────────────
-// SUB-COMPONENTS
+// COMPONENT: PlayerRow
+// — รับ dispatch โดยตรง ไม่มี callback wrapper ใดๆ
 // ─────────────────────────────────────────────
-function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onChange, onRemove }) {
+function PlayerRow({ player, index, courtId, sessionStart, sessionEnd, shuttleCount, dispatch }) {
   return (
     <div className="slide-in card border-court-700 mb-3">
       <div className="flex items-center justify-between mb-3">
@@ -204,7 +275,7 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
           #{String(index + 1).padStart(2, '0')}
         </span>
         <button
-          onClick={() => onRemove(player.id)}
+          onClick={() => dispatch({ type: 'REMOVE_PLAYER', courtId, playerId: player.id })}
           className="text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg px-2 py-1 text-xs font-semibold transition-all"
         >
           ✕ ลบ
@@ -218,7 +289,9 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
             className="input-field"
             placeholder="ชื่อ..."
             value={player.name}
-            onChange={(e) => onChange(player.id, 'name', e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_PLAYER_FIELD', courtId, playerId: player.id, field: 'name', value: e.target.value })
+            }
           />
         </div>
         <div>
@@ -229,7 +302,9 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
             value={player.startTime}
             min={sessionStart}
             max={sessionEnd}
-            onChange={(e) => onChange(player.id, 'startTime', e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_PLAYER_FIELD', courtId, playerId: player.id, field: 'startTime', value: e.target.value })
+            }
           />
         </div>
         <div>
@@ -240,7 +315,9 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
             value={player.endTime}
             min={sessionStart}
             max={sessionEnd}
-            onChange={(e) => onChange(player.id, 'endTime', e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_PLAYER_FIELD', courtId, playerId: player.id, field: 'endTime', value: e.target.value })
+            }
           />
         </div>
         <div>
@@ -251,7 +328,9 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
             min={1}
             max={shuttleCount}
             value={player.shuttleStart}
-            onChange={(e) => onChange(player.id, 'shuttleStart', Number(e.target.value))}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_PLAYER_FIELD', courtId, playerId: player.id, field: 'shuttleStart', value: Number(e.target.value) })
+            }
           />
         </div>
         <div>
@@ -262,7 +341,9 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
             min={1}
             max={shuttleCount}
             value={player.shuttleEnd}
-            onChange={(e) => onChange(player.id, 'shuttleEnd', Number(e.target.value))}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_PLAYER_FIELD', courtId, playerId: player.id, field: 'shuttleEnd', value: Number(e.target.value) })
+            }
           />
         </div>
       </div>
@@ -270,43 +351,24 @@ function PlayerRow({ player, index, sessionStart, sessionEnd, shuttleCount, onCh
   )
 }
 
-// Court Card — กล่องสนามแต่ละอัน
-function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRemoveCourt }) {
-  const updateField = (field, value) => onUpdateCourt(court.id, field, value)
+// ─────────────────────────────────────────────
+// COMPONENT: CourtCard
+// — รับ dispatch โดยตรง ไม่มี callback wrapper ใดๆ
+// ─────────────────────────────────────────────
+const COURT_COLORS = [
+  { border: 'border-lime-400/40',   badge: 'bg-lime-400 text-court-950',   label: 'text-lime-400'   },
+  { border: 'border-cyan-400/40',   badge: 'bg-cyan-400 text-court-950',   label: 'text-cyan-400'   },
+  { border: 'border-orange-400/40', badge: 'bg-orange-400 text-court-950', label: 'text-orange-400' },
+  { border: 'border-pink-400/40',   badge: 'bg-pink-400 text-court-950',   label: 'text-pink-400'   },
+]
 
-  const updatePlayer = useCallback(
-    (playerId, field, value) => {
-      onUpdateCourt(court.id, 'players', (prevPlayers) =>
-        prevPlayers.map((p) => (p.id === playerId ? { ...p, [field]: value } : p)),
-      )
-    },
-    [court.id, onUpdateCourt],
-  )
-
-  const addPlayer = useCallback(() => {
-    onUpdateCourt(court.id, 'players', (prevPlayers) => [
-      ...prevPlayers,
-      makePlayer(court.sessionStart),
-    ])
-  }, [court.id, court.sessionStart, onUpdateCourt])
-
-  const removePlayer = useCallback((playerId) => {
-    onUpdateCourt(court.id, 'players', (prevPlayers) =>
-      prevPlayers.filter((p) => p.id !== playerId),
-    )
-  }, [court.id, onUpdateCourt])
-
-  const courtColors = [
-    { border: 'border-lime-400/40', badge: 'bg-lime-400 text-court-950', label: 'text-lime-400' },
-    { border: 'border-cyan-400/40', badge: 'bg-cyan-400 text-court-950', label: 'text-cyan-400' },
-    { border: 'border-orange-400/40', badge: 'bg-orange-400 text-court-950', label: 'text-orange-400' },
-    { border: 'border-pink-400/40', badge: 'bg-pink-400 text-court-950', label: 'text-pink-400' },
-  ]
-  const color = courtColors[courtIndex % courtColors.length]
+function CourtCard({ court, courtIndex, courtCount, shuttleCount, dispatch }) {
+  const color = COURT_COLORS[courtIndex % COURT_COLORS.length]
 
   return (
     <div className={`card ${color.border} border-2`}>
-      {/* Court Header */}
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <span className={`${color.badge} font-display text-sm px-3 py-1 rounded-full tracking-wider`}>
@@ -316,12 +378,14 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
             className="bg-transparent border-b border-court-600 focus:border-lime-400 focus:outline-none text-white font-semibold text-sm px-1 py-0.5 w-28 transition-colors"
             value={court.name}
             placeholder="ชื่อสนาม"
-            onChange={(e) => updateField('name', e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_COURT_FIELD', courtId: court.id, field: 'name', value: e.target.value })
+            }
           />
         </div>
         {courtCount > 1 && (
           <button
-            onClick={() => onRemoveCourt(court.id)}
+            onClick={() => dispatch({ type: 'REMOVE_COURT', courtId: court.id })}
             className="text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg px-3 py-1 text-xs font-semibold transition-all"
           >
             ✕ ลบสนาม
@@ -329,7 +393,7 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
         )}
       </div>
 
-      {/* Court Settings */}
+      {/* ── Court Settings ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 pb-5 border-b border-court-700">
         <div className="col-span-2 sm:col-span-1">
           <label className="input-label">ค่าสนาม (บาท/ชม.)</label>
@@ -338,7 +402,9 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
             className="input-field"
             min={0}
             value={court.courtPricePerHour}
-            onChange={(e) => updateField('courtPricePerHour', Number(e.target.value))}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_COURT_FIELD', courtId: court.id, field: 'courtPricePerHour', value: Number(e.target.value) })
+            }
           />
         </div>
         <div>
@@ -347,7 +413,9 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
             type="time"
             className="input-field"
             value={court.sessionStart}
-            onChange={(e) => updateField('sessionStart', e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_COURT_FIELD', courtId: court.id, field: 'sessionStart', value: e.target.value })
+            }
           />
         </div>
         <div>
@@ -356,19 +424,21 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
             type="time"
             className="input-field"
             value={court.sessionEnd}
-            onChange={(e) => updateField('sessionEnd', e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: 'UPDATE_COURT_FIELD', courtId: court.id, field: 'sessionEnd', value: e.target.value })
+            }
           />
         </div>
       </div>
 
-      {/* Players */}
+      {/* ── Players ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`font-display text-lg tracking-widest ${color.label}`}>
             PLAYERS <span className="text-green-600 text-sm">({court.players.length})</span>
           </h3>
           <button
-            onClick={addPlayer}
+            onClick={() => dispatch({ type: 'ADD_PLAYER', courtId: court.id })}
             className="flex items-center gap-1 bg-lime-400 hover:bg-lime-300 text-court-950 text-xs px-3 py-1.5 rounded-lg font-bold transition-all active:scale-95"
           >
             + เพิ่มผู้เล่น
@@ -387,11 +457,11 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
             key={player.id}
             player={player}
             index={i}
+            courtId={court.id}
             sessionStart={court.sessionStart}
             sessionEnd={court.sessionEnd}
-            shuttleCount={shuttle.shuttleCount}
-            onChange={updatePlayer}
-            onRemove={removePlayer}
+            shuttleCount={shuttleCount}
+            dispatch={dispatch}
           />
         ))}
       </div>
@@ -399,14 +469,17 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
   )
 }
 
-// Results Table — แสดงผลแบบ multi-court
+// ─────────────────────────────────────────────
+// COMPONENT: ResultsTable
+// ─────────────────────────────────────────────
 function ResultsTable({ data, round, courts, shuttle }) {
   if (!data) return null
   const { courtResults, totalCourt, totalShuttle, grandTotal } = data
 
   return (
     <div className="fade-in space-y-4">
-      {/* Grand Summary Cards */}
+
+      {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center border-green-800">
           <p className="text-green-500 text-xs font-semibold uppercase tracking-wider mb-1">ค่าสนามรวม</p>
@@ -425,7 +498,7 @@ function ResultsTable({ data, round, courts, shuttle }) {
         </div>
       </div>
 
-      {/* Session info per court */}
+      {/* Session Info Tags */}
       <div className="flex flex-wrap gap-2 text-xs">
         {courts.map((c) => (
           <span key={c.id} className="bg-court-700 text-green-300 px-3 py-1 rounded-full">
@@ -443,7 +516,7 @@ function ResultsTable({ data, round, courts, shuttle }) {
           <p className="text-green-400 text-xs font-bold uppercase tracking-wider mb-2">
             🏟️ {cr.courtName}
           </p>
-          <div className="overflow-x-auto rounded-xl border border-court-600 mb-2">
+          <div className="overflow-x-auto rounded-xl border border-court-600">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-court-700 text-green-400 text-xs uppercase tracking-wider">
@@ -487,9 +560,7 @@ function ResultsTable({ data, round, courts, shuttle }) {
               </td>
               <td className="px-4 py-3 text-right font-bold text-white">{fmt(totalCourt, round)}</td>
               <td className="px-4 py-3 text-right font-bold text-white">{fmt(totalShuttle, round)}</td>
-              <td className="px-4 py-3 text-right font-bold text-lime-400 text-base">
-                ฿{fmt(grandTotal, round)}
-              </td>
+              <td className="px-4 py-3 text-right font-bold text-lime-400 text-base">฿{fmt(grandTotal, round)}</td>
             </tr>
           </tfoot>
         </table>
@@ -502,71 +573,18 @@ function ResultsTable({ data, round, courts, shuttle }) {
 // MAIN APP
 // ─────────────────────────────────────────────
 export default function App() {
-  const [courts, setCourts] = useState([makeCourt(0)])
-  const [shuttle, setShuttle] = useState({ shuttleCount: 7, shuttlePrice: 80 })
-  const [round, setRound] = useState(false)
-  const [errors, setErrors] = useState([])
-  const [calcResult, setCalcResult] = useState(null)
-  const [exporting, setExporting] = useState(false)
+  const [state, dispatch] = useReducer(reducer, initialState)
+  const { courts, shuttle, round, exporting } = state
   const resultRef = useRef(null)
 
-  // Auto-calculate on change
-  useEffect(() => {
-    const errs = validate(courts, shuttle)
-    setErrors(errs)
-    if (errs.length === 0) {
-      setCalcResult(calculate(courts, shuttle))
-    } else {
-      setCalcResult(null)
-    }
-  }, [courts, shuttle])
-
-  // ── Court actions ──
-  const addCourt = useCallback(() => {
-    setCourts((prev) => [...prev, makeCourt(prev.length)])
-  }, [])
-
-  const removeCourt = useCallback((courtId) => {
-    setCourts((prev) => prev.filter((c) => c.id !== courtId))
-  }, [])
-
-  const updateCourt = useCallback((courtId, field, value) => {
-    setCourts((prev) =>
-      prev.map((c) => {
-        if (c.id !== courtId) return c
-        // รองรับทั้ง value ปกติ และ updater function (ป้องกัน stale closure ใน CourtCard)
-        const newValue = typeof value === 'function' ? value(c[field]) : value
-        return { ...c, [field]: newValue }
-      }),
-    )
-  }, [])
-
-  // ── Shuttle actions ──
-  const updateShuttle = useCallback((field, value) => {
-    setShuttle((prev) => ({ ...prev, [field]: value }))
-  }, [])
-
-  // ── Quick actions ──
-  const loadExample = useCallback(() => {
-    setCourts(
-      EXAMPLE_COURTS.map((c) => ({
-        ...c,
-        id: uid(),
-        players: c.players.map((p) => ({ ...p, id: uid() })),
-      })),
-    )
-    setShuttle(EXAMPLE_SHUTTLE)
-  }, [])
-
-  const clearAll = useCallback(() => {
-    setCourts([makeCourt(0)])
-    setShuttle({ shuttleCount: 1, shuttlePrice: 0 })
-  }, [])
+  // Derive errors & result (ไม่ต้องใช้ useEffect)
+  const errors = validate(courts, shuttle)
+  const calcResult = errors.length === 0 ? calculate(courts, shuttle) : null
 
   // ── Export image ──
   const exportImage = useCallback(async () => {
     if (!resultRef.current) return
-    setExporting(true)
+    dispatch({ type: 'SET_EXPORTING', value: true })
     try {
       const canvas = await html2canvas(resultRef.current, {
         backgroundColor: '#0a1a0f',
@@ -581,7 +599,7 @@ export default function App() {
     } catch (err) {
       console.error('Export failed:', err)
     } finally {
-      setExporting(false)
+      dispatch({ type: 'SET_EXPORTING', value: false })
     }
   }, [])
 
@@ -589,23 +607,19 @@ export default function App() {
   const copyToClipboard = useCallback(async () => {
     if (!calcResult) return
     const { courtResults, totalCourt, totalShuttle, grandTotal } = calcResult
-    const lines = [
-      `🏸 Badminton Split — ${courts.length} สนาม`,
-      `──────────────────────────`,
-    ]
+    const lines = [`🏸 Badminton Split — ${courts.length} สนาม`, `──────────────────────────`]
     courtResults.forEach((cr) => {
       lines.push(`🏟️ ${cr.courtName}`)
-      cr.results.forEach((r) => {
+      cr.results.forEach((r) =>
         lines.push(
-          `  ${r.name.padEnd(8)} ค่าสนาม: ${fmt(r.courtCost, round).padStart(7)} | ลูก: ${fmt(r.shuttleCost, round).padStart(7)} | รวม: ฿${fmt(r.total, round)}`,
+          `  ${r.name.padEnd(8)} ค่าสนาม: ${fmt(r.courtCost, round).padStart(7)} | ลูก: ${fmt(r.shuttleCost, round).padStart(7)} | รวม: ฿${fmt(r.total, round)}`
         )
-      })
+      )
     })
     lines.push(`──────────────────────────`)
     lines.push(`ค่าสนามรวม: ฿${fmt(totalCourt, round)}`)
     lines.push(`ค่าลูกรวม:  ฿${fmt(totalShuttle, round)}`)
     lines.push(`รวมทั้งหมด: ฿${fmt(grandTotal, round)}`)
-
     try {
       await navigator.clipboard.writeText(lines.join('\n'))
       alert('คัดลอกสรุปค่าใช้จ่ายแล้ว! 📋')
@@ -616,6 +630,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-court-900 font-body text-white pb-12">
+
       {/* ─── HEADER ─── */}
       <header className="relative overflow-hidden bg-court-950 border-b border-court-700 px-4 py-6">
         <div className="absolute inset-0 opacity-5 pointer-events-none">
@@ -637,26 +652,36 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+
         {/* ─── QUICK ACTIONS ─── */}
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={loadExample}
+            onClick={() =>
+              dispatch({
+                type: 'LOAD_EXAMPLE',
+                courts: EXAMPLE_COURTS,
+                shuttle: EXAMPLE_SHUTTLE,
+              })
+            }
             className="flex items-center gap-2 bg-court-700 hover:bg-court-600 border border-court-600 hover:border-lime-400/50 text-green-300 hover:text-lime-400 text-sm px-4 py-2 rounded-lg font-semibold transition-all"
           >
             🧪 โหลดตัวอย่าง
           </button>
           <button
-            onClick={clearAll}
+            onClick={() => dispatch({ type: 'CLEAR_ALL' })}
             className="flex items-center gap-2 bg-court-800 hover:bg-court-700 border border-court-600 text-green-500 hover:text-green-300 text-sm px-4 py-2 rounded-lg font-semibold transition-all"
           >
             🗑️ เคลียร์ทั้งหมด
           </button>
         </div>
 
-        {/* ─── SHUTTLECOCK SECTION (Global) ─── */}
+        {/* ─── SHUTTLECOCK (Global) ─── */}
         <section className="card border-court-600">
           <h2 className="font-display text-2xl tracking-widest text-lime-400 mb-4">
-            SHUTTLECOCK <span className="text-green-600 text-sm font-body normal-case tracking-normal">ใช้ร่วมกันทุกสนาม</span>
+            SHUTTLECOCK{' '}
+            <span className="text-green-600 text-sm font-body normal-case tracking-normal">
+              ใช้ร่วมกันทุกสนาม
+            </span>
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -666,7 +691,9 @@ export default function App() {
                 className="input-field"
                 min={1}
                 value={shuttle.shuttleCount}
-                onChange={(e) => updateShuttle('shuttleCount', Number(e.target.value))}
+                onChange={(e) =>
+                  dispatch({ type: 'UPDATE_SHUTTLE', field: 'shuttleCount', value: Number(e.target.value) })
+                }
               />
             </div>
             <div>
@@ -676,7 +703,9 @@ export default function App() {
                 className="input-field"
                 min={0}
                 value={shuttle.shuttlePrice}
-                onChange={(e) => updateShuttle('shuttlePrice', Number(e.target.value))}
+                onChange={(e) =>
+                  dispatch({ type: 'UPDATE_SHUTTLE', field: 'shuttlePrice', value: Number(e.target.value) })
+                }
               />
             </div>
           </div>
@@ -690,14 +719,14 @@ export default function App() {
           )}
         </section>
 
-        {/* ─── COURTS SECTION ─── */}
+        {/* ─── COURTS ─── */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-2xl tracking-widest text-lime-400">
               COURTS <span className="text-green-600 text-lg">({courts.length})</span>
             </h2>
             <button
-              onClick={addCourt}
+              onClick={() => dispatch({ type: 'ADD_COURT' })}
               className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-court-950 text-sm px-4 py-2 rounded-lg font-bold transition-all active:scale-95"
             >
               + เพิ่มสนาม
@@ -711,9 +740,8 @@ export default function App() {
                 court={court}
                 courtIndex={i}
                 courtCount={courts.length}
-                shuttle={shuttle}
-                onUpdateCourt={updateCourt}
-                onRemoveCourt={removeCourt}
+                shuttleCount={shuttle.shuttleCount}
+                dispatch={dispatch}
               />
             ))}
           </div>
@@ -731,15 +759,14 @@ export default function App() {
           </div>
         )}
 
-        {/* ─── RESULTS SECTION ─── */}
+        {/* ─── RESULTS ─── */}
         {calcResult && (
           <section>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h2 className="font-display text-2xl tracking-widest text-lime-400">RESULTS</h2>
               <div className="flex flex-wrap items-center gap-2">
-                {/* Round toggle */}
                 <button
-                  onClick={() => setRound((r) => !r)}
+                  onClick={() => dispatch({ type: 'TOGGLE_ROUND' })}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
                     round
                       ? 'bg-lime-400 text-court-950 border-lime-400'
@@ -748,14 +775,12 @@ export default function App() {
                 >
                   {round ? '✓ ปัดเศษแล้ว' : '  ปัดเศษ'}
                 </button>
-                {/* Copy */}
                 <button
                   onClick={copyToClipboard}
                   className="flex items-center gap-2 bg-court-700 hover:bg-court-600 border border-court-600 hover:border-green-500 text-green-300 text-xs px-3 py-2 rounded-lg font-semibold transition-all"
                 >
                   📋 คัดลอก
                 </button>
-                {/* Export */}
                 <button
                   onClick={exportImage}
                   disabled={exporting}
@@ -766,7 +791,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Results card (captured for export) */}
             <div ref={resultRef} className="card border-court-600 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-5 pb-4 border-b border-court-600">
                 <div>
@@ -784,13 +808,7 @@ export default function App() {
                 </div>
                 <span className="text-3xl">🏸</span>
               </div>
-
-              <ResultsTable
-                data={calcResult}
-                round={round}
-                courts={courts}
-                shuttle={shuttle}
-              />
+              <ResultsTable data={calcResult} round={round} courts={courts} shuttle={shuttle} />
             </div>
           </section>
         )}
@@ -803,7 +821,6 @@ export default function App() {
         )}
       </main>
 
-      {/* ─── FOOTER ─── */}
       <footer className="max-w-4xl mx-auto px-4 mt-10 text-center text-green-800 text-xs">
         คำนวณตามเวลาจริงและลูกแบดที่ใช้จริง · ยุติธรรมกับทุกคน 🏸
       </footer>

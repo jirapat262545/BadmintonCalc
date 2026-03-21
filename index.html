@@ -139,6 +139,32 @@
     .bc3 { background: rgba(216,180,254,.08); border-color: rgba(216,180,254,.4); color: #d8b4fe; }
     .bc4 { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.4); color: #fcd34d; }
 
+    /* Court card accent borders */
+    .court-card-0 { border: 2px solid rgba(163,230,53,.45) !important; }
+    .court-card-1 { border: 2px solid rgba(56,189,248,.45) !important; }
+    .court-card-2 { border: 2px solid rgba(251,146,60,.45) !important; }
+    .court-card-3 { border: 2px solid rgba(216,180,254,.45) !important; }
+    .court-card-4 { border: 2px solid rgba(251,191,36,.45) !important; }
+    .court-badge-0 { background: #a3e635; color: #050e07; }
+    .court-badge-1 { background: #38bdf8; color: #050e07; }
+    .court-badge-2 { background: #fb923c; color: #050e07; }
+    .court-badge-3 { background: #d8b4fe; color: #050e07; }
+    .court-badge-4 { background: #fcd34d; color: #050e07; }
+    .court-title-0 { color: #a3e635; }
+    .court-title-1 { color: #38bdf8; }
+    .court-title-2 { color: #fb923c; }
+    .court-title-3 { color: #d8b4fe; }
+    .court-title-4 { color: #fcd34d; }
+    .inp-courtname {
+      background: transparent; border: none; border-bottom: 1px solid #173d21;
+      color: white; font-size: 15px; font-weight: 700;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 2px 4px; outline: none; width: 120px;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color .2s;
+    }
+    .inp-courtname:focus { border-bottom-color: #a3e635; }
+
     @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
     .slide-in { animation: slideIn .2s ease-out; }
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
@@ -241,70 +267,85 @@ function buildShuttleList(batches) {
   return list;
 }
 
-function calculate(settings, players, batches) {
-  const { courtPricePerHour, sessionStart, sessionEnd } = settings;
-  const sMin = t2m(sessionStart), eMin = t2m(sessionEnd);
-  if (eMin <= sMin || !players.length) return null;
+function calculate(courts, batches) {
   const shuttles = buildShuttleList(batches);
   if (!shuttles.length) return null;
 
-  const slots = [];
-  for (let t = sMin; t < eMin; t += 60)
-    slots.push({ start: t, end: Math.min(t + 60, eMin) });
+  // รวม players จากทุก court พร้อม tag courtId
+  const allPlayers = courts.flatMap(c => c.players.map(p => ({ ...p, courtId: c.id })));
+  if (!allPlayers.length) return null;
 
-  const courtCosts = Object.fromEntries(players.map(p => [p.id, 0]));
-  const shutCosts  = Object.fromEntries(players.map(p => [p.id, 0]));
-  const batchCosts = Object.fromEntries(players.map(p => [p.id, batches.map(() => 0)]));
-
-  slots.forEach(sl => {
-    const f = (sl.end - sl.start) / 60;
-    const active = players.filter(p => t2m(p.startTime) < sl.end && t2m(p.endTime) > sl.start);
-    if (!active.length) return;
-    const cpp = Number(courtPricePerHour) * f / active.length;
-    active.forEach(p => (courtCosts[p.id] += cpp));
+  // ── ค่าสนาม: คำนวณแยกต่อ court ──
+  const courtCosts = Object.fromEntries(allPlayers.map(p => [p.id, 0]));
+  courts.forEach(court => {
+    const sMin = t2m(court.sessionStart), eMin = t2m(court.sessionEnd);
+    if (eMin <= sMin || !court.players.length) return;
+    const slots = [];
+    for (let t = sMin; t < eMin; t += 60)
+      slots.push({ start: t, end: Math.min(t + 60, eMin) });
+    slots.forEach(sl => {
+      const f = (sl.end - sl.start) / 60;
+      const active = court.players.filter(p => t2m(p.startTime) < sl.end && t2m(p.endTime) > sl.start);
+      if (!active.length) return;
+      const cpp = Number(court.courtPricePerHour) * f / active.length;
+      active.forEach(p => (courtCosts[p.id] += cpp));
+    });
   });
 
+  // ── ค่าลูก: pool รวมทุก court ──
+  const shutCosts  = Object.fromEntries(allPlayers.map(p => [p.id, 0]));
+  const batchCosts = Object.fromEntries(allPlayers.map(p => [p.id, batches.map(() => 0)]));
   shuttles.forEach(({ shuttleNo, batchIdx, price }) => {
-    const using = players.filter(p => Number(p.shuttleStart) <= shuttleNo && Number(p.shuttleEnd) >= shuttleNo);
+    const using = allPlayers.filter(p => Number(p.shuttleStart) <= shuttleNo && Number(p.shuttleEnd) >= shuttleNo);
     if (!using.length) return;
     const cpp = price / using.length;
     using.forEach(p => { shutCosts[p.id] += cpp; batchCosts[p.id][batchIdx] += cpp; });
   });
 
-  const results = players.map(p => ({
-    id: p.id, name: p.name,
-    startTime: p.startTime, endTime: p.endTime,
-    shuttleStart: p.shuttleStart, shuttleEnd: p.shuttleEnd,
-    courtCost:   courtCosts[p.id] || 0,
-    shuttleCost: shutCosts[p.id]  || 0,
-    batchCosts:  batchCosts[p.id],
-    total: (courtCosts[p.id] || 0) + (shutCosts[p.id] || 0),
+  // ── จัดกลุ่ม results ต่อ court ──
+  const courtResults = courts.map(court => ({
+    courtId: court.id,
+    courtName: court.name,
+    results: court.players.map(p => ({
+      id: p.id, name: p.name,
+      startTime: p.startTime, endTime: p.endTime,
+      shuttleStart: p.shuttleStart, shuttleEnd: p.shuttleEnd,
+      courtCost:   courtCosts[p.id] || 0,
+      shuttleCost: shutCosts[p.id]  || 0,
+      batchCosts:  batchCosts[p.id],
+      total: (courtCosts[p.id] || 0) + (shutCosts[p.id] || 0),
+    })),
   }));
 
-  const totalCourt   = results.reduce((s, r) => s + r.courtCost, 0);
-  const totalShuttle = results.reduce((s, r) => s + r.shuttleCost, 0);
-  return { results, totalCourt, totalShuttle, grandTotal: totalCourt + totalShuttle, totalShuttlesUsed: shuttles.length, shuttles };
+  const allResults   = courtResults.flatMap(c => c.results);
+  const totalCourt   = allResults.reduce((s, r) => s + r.courtCost,   0);
+  const totalShuttle = allResults.reduce((s, r) => s + r.shuttleCost, 0);
+  const grandTotal   = totalCourt + totalShuttle;
+  return { courtResults, allResults, totalCourt, totalShuttle, grandTotal, totalShuttlesUsed: shuttles.length, shuttles };
 }
 
-function validate(settings, players, batches) {
-  const errs = [];
-  const sMin = t2m(settings.sessionStart), eMin = t2m(settings.sessionEnd);
-  if (eMin <= sMin) errs.push('⚠️ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น');
-  if (Number(settings.courtPricePerHour) <= 0) errs.push('⚠️ ค่าสนามต้องมากกว่า 0');
+function validate(courts, batches) {
+  const errs  = [];
   const totalS = buildShuttleList(batches).length;
   if (!totalS) errs.push('⚠️ ต้องมีลูกแบดอย่างน้อย 1 ลูก');
   batches.forEach((b, i) => {
     if (Number(b.count) < 1)  errs.push(`⚠️ [ชุดที่ ${i+1}] จำนวนลูกต้องอย่างน้อย 1`);
     if (Number(b.price) <= 0) errs.push(`⚠️ [ชุดที่ ${i+1}] ราคาต้องมากกว่า 0`);
   });
-  players.forEach((p, i) => {
-    const lbl = p.name || `ผู้เล่นคนที่ ${i+1}`;
-    const ps = t2m(p.startTime), pe = t2m(p.endTime);
-    if (!p.name.trim()) errs.push(`⚠️ [${lbl}] กรุณากรอกชื่อ`);
-    if (pe <= ps)       errs.push(`⚠️ [${lbl}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`);
-    if (ps < sMin || pe > eMin) errs.push(`⚠️ [${lbl}] เวลาต้องอยู่ในช่วง ${settings.sessionStart}–${settings.sessionEnd}`);
-    if (Number(p.shuttleStart) > Number(p.shuttleEnd)) errs.push(`⚠️ [${lbl}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`);
-    if (Number(p.shuttleEnd) > totalS) errs.push(`⚠️ [${lbl}] ลูกสุดท้าย (${p.shuttleEnd}) เกินจำนวนลูกทั้งหมด (${totalS})`);
+  courts.forEach((court, ci) => {
+    const cLbl = court.name || `สนาม ${ci+1}`;
+    const sMin = t2m(court.sessionStart), eMin = t2m(court.sessionEnd);
+    if (eMin <= sMin)                         errs.push(`⚠️ [${cLbl}] เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มเล่น`);
+    if (Number(court.courtPricePerHour) <= 0) errs.push(`⚠️ [${cLbl}] ค่าสนามต้องมากกว่า 0`);
+    court.players.forEach((p, i) => {
+      const lbl = p.name || `ผู้เล่นคนที่ ${i+1}`;
+      const ps = t2m(p.startTime), pe = t2m(p.endTime);
+      if (!p.name.trim())  errs.push(`⚠️ [${cLbl}] [${lbl}] กรุณากรอกชื่อ`);
+      if (pe <= ps)        errs.push(`⚠️ [${cLbl}] [${lbl}] เวลาหยุดต้องมากกว่าเวลาเริ่ม`);
+      if (ps < sMin || pe > eMin) errs.push(`⚠️ [${cLbl}] [${lbl}] เวลาต้องอยู่ในช่วง ${court.sessionStart}–${court.sessionEnd}`);
+      if (Number(p.shuttleStart) > Number(p.shuttleEnd)) errs.push(`⚠️ [${cLbl}] [${lbl}] ลูกเริ่มต้องน้อยกว่าหรือเท่ากับลูกสุดท้าย`);
+      if (Number(p.shuttleEnd) > totalS) errs.push(`⚠️ [${cLbl}] [${lbl}] ลูกสุดท้าย (${p.shuttleEnd}) เกินจำนวนลูกทั้งหมด (${totalS})`);
+    });
   });
   return errs;
 }
@@ -312,30 +353,48 @@ function validate(settings, players, batches) {
 /* ═══════════════════════════════════════════
    DEFAULT / EXAMPLE DATA
 ═══════════════════════════════════════════ */
-const DEFAULT_SETTINGS = { courtPricePerHour: 140, sessionStart: '18:00', sessionEnd: '21:00' };
-const DEFAULT_BATCHES  = [{ id: uid(), count: 7, price: 80, label: '' }];
-const DEFAULT_PLAYERS  = [{ id: uid(), name: '', startTime: '18:00', endTime: '', shuttleStart: 1, shuttleEnd: 1 }];
+const DEFAULT_COURTS  = [makeCourt(0)];
+const DEFAULT_BATCHES = [{ id: uid(), count: 7, price: 80, label: '' }];
 
 const makeExample = () => ({
-  settings: { courtPricePerHour: 140, sessionStart: '18:00', sessionEnd: '21:00' },
+  courts: [
+    {
+      id: uid(), name: 'สนาม A', courtPricePerHour: 140,
+      sessionStart: '18:00', sessionEnd: '21:00',
+      players: [
+        {id:uid(),name:'ดิฟ',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
+        {id:uid(),name:'นาย',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
+        {id:uid(),name:'เอิท', startTime:'18:00',endTime:'21:00',shuttleStart:2,shuttleEnd:7},
+        {id:uid(),name:'ดรอย', startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
+      ],
+    },
+    {
+      id: uid(), name: 'สนาม B', courtPricePerHour: 160,
+      sessionStart: '18:00', sessionEnd: '20:00',
+      players: [
+        {id:uid(),name:'มาชร์',startTime:'18:00',endTime:'20:00',shuttleStart:1,shuttleEnd:7},
+        {id:uid(),name:'ปริ้น',startTime:'18:00',endTime:'20:00',shuttleStart:1,shuttleEnd:7},
+        {id:uid(),name:'บิว',  startTime:'18:00',endTime:'20:00',shuttleStart:2,shuttleEnd:7},
+        {id:uid(),name:'ปิ่น', startTime:'19:00',endTime:'20:00',shuttleStart:3,shuttleEnd:7},
+      ],
+    },
+  ],
   batches: [
     { id: uid(), count: 3, price: 50, label: 'ลูกของดิฟ' },
     { id: uid(), count: 4, price: 80, label: 'ซื้อเพิ่ม' },
-  ],
-  players: [
-    {id:uid(),name:'ดิฟ',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
-    {id:uid(),name:'นาย',  startTime:'18:00',endTime:'19:00',shuttleStart:1,shuttleEnd:4},
-    {id:uid(),name:'เอิท', startTime:'18:00',endTime:'21:00',shuttleStart:2,shuttleEnd:7},
-    {id:uid(),name:'ดรอย', startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
-    {id:uid(),name:'มาชร์',startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
-    {id:uid(),name:'ปริ้น',startTime:'18:00',endTime:'21:00',shuttleStart:1,shuttleEnd:7},
-    {id:uid(),name:'บิว',  startTime:'18:00',endTime:'21:00',shuttleStart:2,shuttleEnd:7},
-    {id:uid(),name:'ปิ่น', startTime:'19:00',endTime:'21:00',shuttleStart:3,shuttleEnd:7},
   ],
 });
 
 const makeBatch  = () => ({ id: uid(), count: 1, price: 80, label: '' });
 const makePlayer = (s = '18:00') => ({ id: uid(), name: '', startTime: s, endTime: '', shuttleStart: 1, shuttleEnd: 1 });
+const makeCourt  = (idx = 0) => ({
+  id: uid(),
+  name: `สนาม ${idx + 1}`,
+  courtPricePerHour: 140,
+  sessionStart: '18:00',
+  sessionEnd: '21:00',
+  players: [makePlayer('18:00')],
+});
 
 /* ═══════════════════════════════════════════
    SHARP EXPORT
@@ -430,7 +489,7 @@ function BatchRow({ batch, index, startNum, endNum, onChange, onRemove, canRemov
   );
 }
 
-function PlayerRow({ player, index, settings, totalShuttles, batches, onChange, onRemove }) {
+function PlayerRow({ player, index, courtId, sessionStart, sessionEnd, totalShuttles, batches, onChange, onRemove }) {
   const shuttles = buildShuttleList(batches);
   const bOf = n => shuttles.find(s => s.shuttleNo === Number(n))?.batchIdx ?? 0;
   const sb = bOf(player.shuttleStart), eb = bOf(player.shuttleEnd);
@@ -440,29 +499,29 @@ function PlayerRow({ player, index, settings, totalShuttles, batches, onChange, 
         <span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: '#a3e635', letterSpacing: 2 }}>
           #{String(index+1).padStart(2,'0')}
         </span>
-        <button className="btn-red" onClick={() => onRemove(player.id)}>✕ ลบ</button>
+        <button className="btn-red" onClick={() => onRemove(courtId, player.id)}>✕ ลบ</button>
       </div>
       <div className="gp" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
         <div className="pn">
           <label className="lbl">ชื่อผู้เล่น</label>
           <input type="text" className="inp" placeholder="ชื่อ..."
             autoCapitalize="words" autoCorrect="off" autoComplete="name"
-            value={player.name} onChange={e => onChange(player.id, 'name', e.target.value)} />
+            value={player.name} onChange={e => onChange(courtId, player.id, 'name', e.target.value)} />
         </div>
         <div>
           <label className="lbl">เวลาเริ่ม</label>
           <input type="time" className="inp"
-            value={player.startTime} onChange={e => onChange(player.id, 'startTime', e.target.value)} />
+            value={player.startTime} onChange={e => onChange(courtId, player.id, 'startTime', e.target.value)} />
         </div>
         <div>
           <label className="lbl">เวลาหยุด</label>
           <input type="time" className="inp"
-            value={player.endTime} onChange={e => onChange(player.id, 'endTime', e.target.value)} />
+            value={player.endTime} onChange={e => onChange(courtId, player.id, 'endTime', e.target.value)} />
         </div>
         <div>
           <label className="lbl">ลูกที่เริ่มใช้</label>
           <input type="number" inputMode="numeric" className="inp" min={1} max={totalShuttles || 99}
-            value={player.shuttleStart} onChange={e => onChange(player.id, 'shuttleStart', Number(e.target.value))} />
+            value={player.shuttleStart} onChange={e => onChange(courtId, player.id, 'shuttleStart', Number(e.target.value))} />
           {totalShuttles > 0 && (
             <span className={`batch-tag ${bCls(sb)}`} style={{ marginTop: 5 }}>{bIco(sb)} ชุด {sb+1}</span>
           )}
@@ -470,7 +529,7 @@ function PlayerRow({ player, index, settings, totalShuttles, batches, onChange, 
         <div>
           <label className="lbl">ลูกสุดท้าย</label>
           <input type="number" inputMode="numeric" className="inp" min={1} max={totalShuttles || 99}
-            value={player.shuttleEnd} onChange={e => onChange(player.id, 'shuttleEnd', Number(e.target.value))} />
+            value={player.shuttleEnd} onChange={e => onChange(courtId, player.id, 'shuttleEnd', Number(e.target.value))} />
           {totalShuttles > 0 && (
             <span className={`batch-tag ${bCls(eb)}`} style={{ marginTop: 5 }}>{bIco(eb)} ชุด {eb+1}</span>
           )}
@@ -480,11 +539,79 @@ function PlayerRow({ player, index, settings, totalShuttles, batches, onChange, 
   );
 }
 
-function ResultsTable({ data, round, settings, batches }) {
+function CourtCard({ court, courtIndex, courtCount, batches, totalShuttles, onUpdateCourt, onUpdatePlayer, onRemovePlayer, onAddPlayer, onRemoveCourt }) {
+  const ci = courtIndex % 5;
+  return (
+    <div className={`card court-card-${ci} slide-in`} style={{ marginBottom: 0 }}>
+      {/* Court Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className={`court-badge-${ci}`} style={{ fontFamily: 'Bebas Neue', fontSize: 13, padding: '3px 12px', borderRadius: 99, letterSpacing: 2 }}>
+            COURT {courtIndex + 1}
+          </span>
+          <input
+            className="inp-courtname"
+            value={court.name}
+            placeholder="ชื่อสนาม"
+            onChange={e => onUpdateCourt(court.id, 'name', e.target.value)}
+          />
+        </div>
+        {courtCount > 1 && (
+          <button className="btn-red" onClick={() => onRemoveCourt(court.id)}>✕ ลบสนาม</button>
+        )}
+      </div>
+
+      {/* Court Settings */}
+      <div className="g3" style={{ marginBottom: 18, paddingBottom: 18, borderBottom: '1px solid #173d21' }}>
+        <div className="span2">
+          <label className="lbl">ค่าสนาม (บาท/ชม.)</label>
+          <input type="number" inputMode="numeric" className="inp" min={0}
+            value={court.courtPricePerHour} onChange={e => onUpdateCourt(court.id, 'courtPricePerHour', e.target.value)} />
+        </div>
+        <div>
+          <label className="lbl">เวลาเริ่มเล่น</label>
+          <input type="time" className="inp"
+            value={court.sessionStart} onChange={e => onUpdateCourt(court.id, 'sessionStart', e.target.value)} />
+        </div>
+        <div>
+          <label className="lbl">เวลาสิ้นสุด</label>
+          <input type="time" className="inp"
+            value={court.sessionEnd} onChange={e => onUpdateCourt(court.id, 'sessionEnd', e.target.value)} />
+        </div>
+      </div>
+
+      {/* Players Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <h3 className={`court-title-${ci}`} style={{ fontFamily: 'Bebas Neue', fontSize: 20, letterSpacing: 3, margin: 0 }}>
+          PLAYERS <span style={{ color: '#166534', fontSize: 16 }}>({court.players.length})</span>
+        </h3>
+        <button className="btn-lime" onClick={() => onAddPlayer(court.id)}>+ เพิ่มผู้เล่น</button>
+      </div>
+
+      {court.players.length === 0 && (
+        <div className="card" style={{ textAlign: 'center', padding: '28px 20px', borderStyle: 'dashed', borderColor: '#1f5229', color: '#166534' }}>
+          <p style={{ fontSize: 28, marginBottom: 6 }}>👤</p>
+          <p style={{ fontWeight: 600, fontSize: 14 }}>ยังไม่มีผู้เล่น กด "เพิ่มผู้เล่น" เพื่อเริ่ม</p>
+        </div>
+      )}
+
+      {court.players.map((p, i) => (
+        <PlayerRow
+          key={p.id} player={p} index={i}
+          courtId={court.id}
+          sessionStart={court.sessionStart} sessionEnd={court.sessionEnd}
+          totalShuttles={totalShuttles} batches={batches}
+          onChange={onUpdatePlayer} onRemove={onRemovePlayer}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ResultsTable({ data, round, courts, batches }) {
   if (!data) return null;
-  const { results, totalCourt, totalShuttle, grandTotal } = data;
+  const { courtResults, allResults, totalCourt, totalShuttle, grandTotal, shuttles } = data;
   const multiBatch = batches.length > 1;
-  const shuttles = buildShuttleList(batches);
   return (
     <div className="fade-in">
       <div className="g3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
@@ -500,52 +627,62 @@ function ResultsTable({ data, round, settings, batches }) {
           </div>
         ))}
       </div>
-      {multiBatch && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-          {batches.map((b, i) => {
-            const mine = shuttles.filter(s => s.batchIdx === i);
-            if (!mine.length) return null;
-            const bTotal = results.reduce((s, r) => s + (r.batchCosts[i] || 0), 0);
-            return (
-              <span key={b.id} className={`batch-tag ${bCls(i)}`} style={{ fontSize: 12, padding: '5px 11px' }}>
-                {bIco(i)} ชุด{i+1} (ลูก {mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo} · {b.price}฿) → รวม ฿{fmt(bTotal, round)}
-              </span>
-            );
-          })}
-        </div>
-      )}
+
+      {/* Info tags */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 14 }}>
-        {[`🕐 ${settings.sessionStart}–${settings.sessionEnd}`, `🏟️ ${settings.courtPricePerHour} บาท/ชม.`, `🏸 ${data.totalShuttlesUsed} ลูก รวม ฿${fmt(totalShuttle, round)}`].map(tag => (
-          <span key={tag} style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>{tag}</span>
+        {courts.map(c => (
+          <span key={c.id} style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>
+            🏟️ {c.name}: {c.sessionStart}–{c.sessionEnd} · {c.courtPricePerHour}฿/ชม.
+          </span>
         ))}
+        <span style={{ background: '#0f2a17', border: '1px solid #1f5229', color: '#86efac', borderRadius: 99, padding: '4px 11px', fontSize: 12 }}>
+          🏸 {data.totalShuttlesUsed} ลูก รวม ฿{fmt(totalShuttle, round)}
+        </span>
       </div>
-      <div className="scroll-x" style={{ borderRadius: 12, border: '1px solid #173d21' }}>
+
+      {/* ตารางแยกต่อ court */}
+      {courtResults.map(cr => (
+        <div key={cr.courtId} style={{ marginBottom: 18 }}>
+          <p style={{ color: '#4ade80', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
+            🏟️ {cr.courtName}
+          </p>
+          <div className="scroll-x" style={{ borderRadius: 12, border: '1px solid #173d21' }}>
+            <table className="rtable">
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left' }}>ชื่อ</th>
+                  <th>เวลา</th><th>ลูก</th><th>ค่าสนาม</th>
+                  {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <th key={b.id}>{bIco(i)}ชุด{i+1}<br/><span style={{fontSize:9}}>{mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo}</span></th>; }) : <th>ค่าลูก</th>}
+                  <th style={{ color: '#a3e635' }}>รวม</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cr.results.map(r => (
+                  <tr key={r.id}>
+                    <td>{r.name}</td>
+                    <td style={{ fontSize: 11, color: '#86efac' }}>{r.startTime}–{r.endTime}</td>
+                    <td style={{ fontSize: 11, color: '#86efac' }}>{r.shuttleStart}–{r.shuttleEnd}</td>
+                    <td>{fmt(r.courtCost, round)}</td>
+                    {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(r.batchCosts[i]||0,round)}</td>; }) : <td>{fmt(r.shuttleCost,round)}</td>}
+                    <td className="lime-col">฿{fmt(r.total, round)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+
+      {/* Grand Total */}
+      <div className="scroll-x" style={{ borderRadius: 12, border: '1px solid rgba(163,230,53,.3)', boxShadow: '0 0 16px rgba(163,230,53,.1)' }}>
         <table className="rtable">
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left' }}>ชื่อ</th>
-              <th>เวลา</th><th>ลูก</th><th>ค่าสนาม</th>
-              {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <th key={b.id}>{bIco(i)}ชุด{i+1}<br/><span style={{fontSize:9}}>{mine[0].shuttleNo}–{mine[mine.length-1].shuttleNo}</span></th>; }) : <th>ค่าลูก</th>}
-              <th style={{ color: '#a3e635' }}>รวม</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map(r => (
-              <tr key={r.id}>
-                <td>{r.name}</td>
-                <td style={{ fontSize: 11, color: '#86efac' }}>{r.startTime}–{r.endTime}</td>
-                <td style={{ fontSize: 11, color: '#86efac' }}>{r.shuttleStart}–{r.shuttleEnd}</td>
-                <td>{fmt(r.courtCost, round)}</td>
-                {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(r.batchCosts[i]||0,round)}</td>; }) : <td>{fmt(r.shuttleCost,round)}</td>}
-                <td className="lime-col">฿{fmt(r.total, round)}</td>
-              </tr>
-            ))}
-          </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} style={{ textAlign: 'left', color: '#4ade80', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em' }}>รวมทั้งหมด</td>
+              <td colSpan={3} style={{ textAlign: 'left', color: '#4ade80', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                รวมทั้งหมด ({courts.length} สนาม)
+              </td>
               <td>{fmt(totalCourt, round)}</td>
-              {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(results.reduce((s,r)=>s+(r.batchCosts[i]||0),0),round)}</td>; }) : <td>{fmt(totalShuttle,round)}</td>}
+              {multiBatch ? batches.map((b,i) => { const mine=shuttles.filter(s=>s.batchIdx===i); if(!mine.length) return null; return <td key={b.id}>{fmt(allResults.reduce((s,r)=>s+(r.batchCosts[i]||0),0),round)}</td>; }) : <td>{fmt(totalShuttle,round)}</td>}
               <td className="lime-col" style={{ fontSize: 15 }}>฿{fmt(grandTotal, round)}</td>
             </tr>
           </tfoot>
@@ -562,65 +699,78 @@ function App() {
   // ── Load saved state or use defaults ──
   const saved = useMemo(() => loadFromStorage(), []);
 
-  const [settings, setSettings] = useState(saved?.settings || DEFAULT_SETTINGS);
-  const [batches,  setBatches]  = useState(saved?.batches  || DEFAULT_BATCHES);
-  const [players,  setPlayers]  = useState(saved?.players  || DEFAULT_PLAYERS);
-  const [round,    setRound]    = useState(saved?.round     || false);
-  const [errors,   setErrors]   = useState([]);
-  const [result,   setResult]   = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'saving'
-  const [toast,    setToast]    = useState(null);
-  const resultRef  = useRef(null);
-  const saveTimer  = useRef(null);
+  const [courts,  setCourts]  = useState(() => saved?.courts  || DEFAULT_COURTS);
+  const [batches, setBatches] = useState(() => saved?.batches || DEFAULT_BATCHES);
+  const [round,   setRound]   = useState(saved?.round || false);
+  const [loading,    setLoading]    = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saved');
+  const [toast,      setToast]      = useState(null);
+  const resultRef = useRef(null);
+  const saveTimer = useRef(null);
 
-  // ── Auto-save to localStorage (debounced 600ms) ──
+  // ── Auto-save (debounced 600ms) ──
   useEffect(() => {
     setSaveStatus('saving');
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      saveToStorage({ settings, batches, players, round });
+      saveToStorage({ courts, batches, round });
       setSaveStatus('saved');
     }, 600);
     return () => clearTimeout(saveTimer.current);
-  }, [settings, batches, players, round]);
+  }, [courts, batches, round]);
 
-  // ── Auto-calculate ──
-  useEffect(() => {
-    const errs = validate(settings, players, batches);
-    setErrors(errs);
-    setResult(errs.length === 0 && players.length > 0 ? calculate(settings, players, batches) : null);
-  }, [settings, players, batches]);
+  // ── Derived (ไม่ต้องใช้ useEffect) ──
+  const errors = validate(courts, batches);
+  const result = errors.length === 0 ? calculate(courts, batches) : null;
 
-  const showToast = useCallback((msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  }, []);
-
-  const updS = useCallback((k, v) => setSettings(p => ({ ...p, [k]: v })), []);
-  const updB = useCallback((id, k, v) => setBatches(p => p.map(b => b.id===id ? { ...b, [k]: v } : b)), []);
-  const updP = useCallback((id, k, v) => setPlayers(p => p.map(pl => pl.id===id ? { ...pl, [k]: v } : pl)), []);
+  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); }, []);
 
   const batchNums = useMemo(() => {
     let num = 1;
     return batches.map(b => { const s=num, cnt=Math.max(0,Number(b.count)||0); num+=cnt; return { start:s, end:s+cnt-1 }; });
   }, [batches]);
-
   const totalShuttles = useMemo(() => buildShuttleList(batches).length, [batches]);
+
+  // ── Court handlers ──
+  const addCourt    = () => setCourts(p => [...p, makeCourt(p.length)]);
+  const removeCourt = (courtId) => setCourts(p => p.filter(c => c.id !== courtId));
+  const updateCourt = useCallback((courtId, field, value) => {
+    setCourts(p => p.map(c => c.id === courtId ? { ...c, [field]: value } : c));
+  }, []);
+
+  // ── Player handlers ──
+  const addPlayer = (courtId) => {
+    setCourts(p => p.map(c => c.id === courtId
+      ? { ...c, players: [...c.players, makePlayer(c.sessionStart)] }
+      : c
+    ));
+  };
+  const removePlayer = useCallback((courtId, playerId) => {
+    setCourts(p => p.map(c => c.id === courtId
+      ? { ...c, players: c.players.filter(pl => pl.id !== playerId) }
+      : c
+    ));
+  }, []);
+  const updatePlayer = useCallback((courtId, playerId, field, value) => {
+    setCourts(p => p.map(c => c.id === courtId
+      ? { ...c, players: c.players.map(pl => pl.id === playerId ? { ...pl, [field]: value } : pl) }
+      : c
+    ));
+  }, []);
+
+  // ── Batch handlers ──
+  const updB = useCallback((id, k, v) => setBatches(p => p.map(b => b.id===id ? { ...b, [k]: v } : b)), []);
 
   const loadExample = () => {
     const ex = makeExample();
-    setSettings(ex.settings); setBatches(ex.batches); setPlayers(ex.players);
+    setCourts(ex.courts); setBatches(ex.batches);
     showToast('โหลดข้อมูลตัวอย่างแล้ว ✅');
   };
 
-  // ── Clear ALL — shows confirm first ──
   const clearAll = () => {
     if (!window.confirm('ล้างข้อมูลทั้งหมด?\n(ข้อมูลที่บันทึกไว้จะถูกลบออกด้วย)')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    setSettings(DEFAULT_SETTINGS);
-    setBatches([makeBatch()]);
-    setPlayers([makePlayer()]);
+    localStorage.removeItem('badminton_split_v2');
+    setCourts([makeCourt(0)]); setBatches([makeBatch()]); setRound(false);
     showToast('ล้างข้อมูลแล้ว 🗑️');
   };
 
@@ -641,16 +791,18 @@ function App() {
 
   const copyText = async () => {
     if (!result) return;
-    const { results, totalCourt, totalShuttle, grandTotal } = result;
-    const lines = [
-      `🏸 Badminton Split — ${settings.sessionStart}–${settings.sessionEnd}`,
-      '─'.repeat(44),
-      ...results.map(r => `${r.name.padEnd(6)} สนาม:${fmt(r.courtCost,round).padStart(8)} | ลูก:${fmt(r.shuttleCost,round).padStart(8)} | รวม: ฿${fmt(r.total,round)}`),
-      '─'.repeat(44),
-      `ค่าสนามรวม : ฿${fmt(totalCourt,round)}`,
-      `ค่าลูกรวม  : ฿${fmt(totalShuttle,round)}`,
-      `รวมทั้งหมด : ฿${fmt(grandTotal,round)}`,
-    ];
+    const { courtResults, totalCourt, totalShuttle, grandTotal } = result;
+    const lines = [`🏸 Badminton Split — ${courts.length} สนาม`, '─'.repeat(44)];
+    courtResults.forEach(cr => {
+      lines.push(`🏟️ ${cr.courtName}`);
+      cr.results.forEach(r =>
+        lines.push(`  ${r.name.padEnd(6)} สนาม:${fmt(r.courtCost,round).padStart(8)} | ลูก:${fmt(r.shuttleCost,round).padStart(8)} | รวม: ฿${fmt(r.total,round)}`)
+      );
+    });
+    lines.push('─'.repeat(44));
+    lines.push(`ค่าสนามรวม : ฿${fmt(totalCourt,round)}`);
+    lines.push(`ค่าลูกรวม  : ฿${fmt(totalShuttle,round)}`);
+    lines.push(`รวมทั้งหมด : ฿${fmt(grandTotal,round)}`);
     try { await navigator.clipboard.writeText(lines.join('\n')); showToast('คัดลอกแล้ว! 📋'); }
     catch { alert('ไม่สามารถคัดลอกได้ กรุณาใช้ Export รูปแทนครับ'); }
   };
@@ -712,34 +864,12 @@ function App() {
           <button className="btn-ghost" onClick={clearAll}>🗑️ ล้างข้อมูล</button>
         </div>
 
-        {/* ── COURT ── */}
-        <section className="card" style={{ marginBottom: 14, border: '1px solid #1f5229' }}>
-          <h2 style={{ ...H2, marginBottom: 14 }}>COURT SETTINGS</h2>
-          <div className="g3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-            <div className="span2">
-              <label className="lbl">ค่าสนาม (บาท/ชม.)</label>
-              <input type="number" inputMode="numeric" className="inp" min={0}
-                value={settings.courtPricePerHour} onChange={e => updS('courtPricePerHour', e.target.value)} />
-            </div>
-            <div>
-              <label className="lbl">เวลาเริ่มเล่น</label>
-              <input type="time" className="inp"
-                value={settings.sessionStart} onChange={e => updS('sessionStart', e.target.value)} />
-            </div>
-            <div>
-              <label className="lbl">เวลาสิ้นสุด</label>
-              <input type="time" className="inp"
-                value={settings.sessionEnd} onChange={e => updS('sessionEnd', e.target.value)} />
-            </div>
-          </div>
-        </section>
-
         {/* ── SHUTTLECOCK ── */}
         <section className="card" style={{ marginBottom: 14, border: '1px solid #1f5229' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 10 }}>
             <div>
               <h2 style={H2}>SHUTTLECOCK</h2>
-              <p style={{ color: '#4ade80', fontSize: 12, marginTop: 4 }}>เพิ่มหลายชุดได้ · ราคาต่างกันได้ · ลูกนับต่อเนื่อง</p>
+              <p style={{ color: '#4ade80', fontSize: 12, marginTop: 4 }}>ใช้ร่วมกันทุกสนาม · เพิ่มหลายชุดได้ · ราคาต่างกันได้ · ลูกนับต่อเนื่อง</p>
             </div>
             <button className="btn-lime" onClick={() => setBatches(p => [...p, makeBatch()])}>+ เพิ่มชุดลูก</button>
           </div>
@@ -760,23 +890,23 @@ function App() {
           )}
         </section>
 
-        {/* ── PLAYERS ── */}
+        {/* ── COURTS ── */}
         <section style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h2 style={H2}>PLAYERS <span style={{ color: '#166534', fontSize: 20 }}>({players.length})</span></h2>
-            <button className="btn-lime" onClick={() => setPlayers(p => [...p, makePlayer(settings.sessionStart)])}>+ เพิ่มผู้เล่น</button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h2 style={H2}>COURTS <span style={{ color: '#166534', fontSize: 20 }}>({courts.length})</span></h2>
+            <button className="btn-lime" onClick={addCourt}>+ เพิ่มสนาม</button>
           </div>
-          {players.length === 0 && (
-            <div className="card" style={{ textAlign: 'center', padding: '36px 20px', borderStyle: 'dashed', borderColor: '#1f5229', color: '#166534' }}>
-              <p style={{ fontSize: 32, marginBottom: 8 }}>👤</p>
-              <p style={{ fontWeight: 600 }}>ยังไม่มีผู้เล่น กด "เพิ่มผู้เล่น" เพื่อเริ่ม</p>
-            </div>
-          )}
-          {players.map((p, i) => (
-            <PlayerRow key={p.id} player={p} index={i}
-              settings={settings} totalShuttles={totalShuttles} batches={batches}
-              onChange={updP} onRemove={id => setPlayers(p => p.filter(x => x.id !== id))} />
-          ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {courts.map((court, i) => (
+              <CourtCard
+                key={court.id} court={court} courtIndex={i} courtCount={courts.length}
+                batches={batches} totalShuttles={totalShuttles}
+                onUpdateCourt={updateCourt} onUpdatePlayer={updatePlayer}
+                onRemovePlayer={removePlayer} onAddPlayer={addPlayer}
+                onRemoveCourt={removeCourt}
+              />
+            ))}
+          </div>
         </section>
 
         {/* ── ERRORS ── */}
@@ -813,12 +943,12 @@ function App() {
                 </div>
                 <span style={{ fontSize: 28 }}>🏸</span>
               </div>
-              <ResultsTable data={result} round={round} settings={settings} batches={batches} />
+              <ResultsTable data={result} round={round} courts={courts} batches={batches} />
             </div>
           </section>
         )}
 
-        {!result && errors.length === 0 && players.length > 0 && (
+        {!result && errors.length === 0 && courts.every(c => c.players.length > 0) && (
           <div className="card" style={{ textAlign: 'center', padding: '28px', borderStyle: 'dashed', borderColor: '#1f5229', color: '#166534' }}>
             <p style={{ fontSize: 14 }}>กรอกข้อมูลให้ครบเพื่อดูผลลัพธ์อัตโนมัติ ✨</p>
           </div>
