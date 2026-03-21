@@ -276,23 +276,25 @@ function CourtCard({ court, courtIndex, courtCount, shuttle, onUpdateCourt, onRe
 
   const updatePlayer = useCallback(
     (playerId, field, value) => {
-      onUpdateCourt(court.id, 'players', court.players.map(
-        (p) => (p.id === playerId ? { ...p, [field]: value } : p),
-      ))
+      onUpdateCourt(court.id, 'players', (prevPlayers) =>
+        prevPlayers.map((p) => (p.id === playerId ? { ...p, [field]: value } : p)),
+      )
     },
-    [court.id, court.players, onUpdateCourt],
+    [court.id, onUpdateCourt],
   )
 
-  const addPlayer = () => {
-    onUpdateCourt(court.id, 'players', [
-      ...court.players,
+  const addPlayer = useCallback(() => {
+    onUpdateCourt(court.id, 'players', (prevPlayers) => [
+      ...prevPlayers,
       makePlayer(court.sessionStart),
     ])
-  }
+  }, [court.id, court.sessionStart, onUpdateCourt])
 
-  const removePlayer = (playerId) => {
-    onUpdateCourt(court.id, 'players', court.players.filter((p) => p.id !== playerId))
-  }
+  const removePlayer = useCallback((playerId) => {
+    onUpdateCourt(court.id, 'players', (prevPlayers) =>
+      prevPlayers.filter((p) => p.id !== playerId),
+    )
+  }, [court.id, onUpdateCourt])
 
   const courtColors = [
     { border: 'border-lime-400/40', badge: 'bg-lime-400 text-court-950', label: 'text-lime-400' },
@@ -530,7 +532,12 @@ export default function App() {
 
   const updateCourt = useCallback((courtId, field, value) => {
     setCourts((prev) =>
-      prev.map((c) => (c.id === courtId ? { ...c, [field]: value } : c)),
+      prev.map((c) => {
+        if (c.id !== courtId) return c
+        // รองรับทั้ง value ปกติ และ updater function (ป้องกัน stale closure ใน CourtCard)
+        const newValue = typeof value === 'function' ? value(c[field]) : value
+        return { ...c, [field]: newValue }
+      }),
     )
   }, [])
 
